@@ -242,7 +242,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String currentLanguage = 'English (EN)';
-  bool isDarkTheme = true;
 
   void _showSettingsModal(BuildContext context) {
     showModalBottomSheet(
@@ -323,9 +322,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               decoration: const BoxDecoration(color: Color(0xFF131B2E)),
               accountName: Text(widget.analystName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               accountEmail: Text(widget.analystEmail, style: const TextStyle(color: Colors.cyanAccent)),
-              currentAccountPicture: CircleAvatar(
+              currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.blueAccent,
-                child: const Icon(Icons.security, size: 36, color: Colors.white),
+                child: Icon(Icons.security, size: 36, color: Colors.white),
               ),
             ),
             ListTile(
@@ -444,7 +443,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// 3. مولد قواعد سوريكاتا المتقدم
 class SuricataScreen extends StatefulWidget {
   const SuricataScreen({Key? key}) : super(key: key);
 
@@ -614,7 +612,6 @@ class _SuricataScreenState extends State<SuricataScreen> {
   }
 }
 
-// 4. مولد وايرشاك الديناميكي المخصص بالكتابة ووصف الطلب
 class WiresharkScreen extends StatefulWidget {
   const WiresharkScreen({Key? key}) : super(key: key);
 
@@ -696,7 +693,6 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
   }
 }
 
-// 5. مولد لغة Splunk SPL الجديد كلياً
 class SplunkScreen extends StatefulWidget {
   const SplunkScreen({Key? key}) : super(key: key);
 
@@ -783,7 +779,6 @@ class _SplunkScreenState extends State<SplunkScreen> {
   }
 }
 
-// 6. محرك البحث والتحقيق لمؤشرات الاختراق IOCs مع زر المساعدة
 class CheatSheetScreen extends StatefulWidget {
   const CheatSheetScreen({Key? key}) : super(key: key);
 
@@ -895,7 +890,7 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.between,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
                                 child: Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent, fontSize: 15)),
