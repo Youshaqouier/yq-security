@@ -13,7 +13,7 @@ class YQSecurityApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'YQ Security Enterprise Secure Edition',
+      title: 'YQSecurity Enterprise',
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.blue,
@@ -65,7 +65,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => DashboardScreen(analystEmail: email)),
+      MaterialPageRoute(
+        builder: (context) => DashboardScreen(
+          analystEmail: email,
+          analystName: nameController.text.isNotEmpty ? nameController.text : 'SOC Analyst',
+        ),
+      ),
     );
   }
 
@@ -110,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'YQ SECURE SOC',
+                'YQSECURITY SOC',
                 style: TextStyle(
                   fontSize: 24, 
                   fontWeight: FontWeight.bold, 
@@ -198,8 +203,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: const Icon(Icons.vpn_key, size: 18, color: Colors.orangeAccent),
-                      label: const Text('OAuth 2.0', style: TextStyle(color: Colors.white, fontSize: 13)),
+                      icon: const Icon(Icons.facebook, size: 20, color: Colors.blue),
+                      label: const Text('Facebook', style: TextStyle(color: Colors.white, fontSize: 13)),
                       onPressed: () => _handleSecureAuth(context),
                     ),
                   ),
@@ -226,15 +231,75 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   final String analystEmail;
-  const DashboardScreen({Key? key, required this.analystEmail}) : super(key: key);
+  final String analystName;
+  const DashboardScreen({Key? key, required this.analystEmail, required this.analystName}) : super(key: key);
+
+  @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  String currentLanguage = 'English (EN)';
+  bool isDarkTheme = true;
+
+  void _showSettingsModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF131B2E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('SOC Analyst Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.cyanAccent)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.language, color: Colors.blueAccent),
+                title: const Text('Language / اللغة'),
+                subtitle: Text(currentLanguage),
+                trailing: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      currentLanguage = currentLanguage.contains('EN') ? 'العربية (AR)' : 'English (EN)';
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Switch', style: TextStyle(color: Colors.cyanAccent)),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.person_outline, color: Colors.greenAccent),
+                title: const Text('Analyst ID & Email'),
+                subtitle: Text(widget.analystEmail),
+              ),
+              ListTile(
+                leading: const Icon(Icons.lock_reset, color: Colors.orangeAccent),
+                title: const Text('Update Master Password'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password update link sent securely!')));
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('YQ Security - Operations Hub'),
+        title: const Text('YQSecurity - Operations Hub'),
         centerTitle: true,
         backgroundColor: const Color(0xFF131B2E),
         actions: [
@@ -249,13 +314,58 @@ class DashboardScreen extends StatelessWidget {
           )
         ],
       ),
+      drawer: Drawer(
+        backgroundColor: const Color(0xFF0A0F1D),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: Color(0xFF131B2E)),
+              accountName: Text(widget.analystName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              accountEmail: Text(widget.analystEmail, style: const TextStyle(color: Colors.cyanAccent)),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.blueAccent,
+                child: const Icon(Icons.security, size: 36, color: Colors.white),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: Colors.cyanAccent),
+              title: const Text('Settings & Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                _showSettingsModal(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.language, color: Colors.blueAccent),
+              title: Text('Language: $currentLanguage'),
+              onTap: () {
+                setState(() {
+                  currentLanguage = currentLanguage.contains('EN') ? 'العربية (AR)' : 'English (EN)';
+                });
+              },
+            ),
+            const Divider(color: Colors.grey),
+            ListTile(
+              leading: const Icon(Icons.exit_to_app, color: Colors.redAccent),
+              title: const Text('Logout Securely'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Logged in as: $analystEmail',
+              'Active Analyst: ${widget.analystName}',
               style: const TextStyle(fontSize: 12, color: Colors.greenAccent),
             ),
             const SizedBox(height: 10),
@@ -283,11 +393,20 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     context,
-                    'Smart Wireshark Filter Engine',
-                    'Natural language & precise packet filtering',
+                    'Dynamic Wireshark Filter Builder',
+                    'Describe your packet filter requirements freely',
                     Icons.network_check,
                     Colors.lightBlueAccent,
                     const WiresharkScreen(),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildMenuCard(
+                    context,
+                    'Splunk SPL Query Generator',
+                    'Build enterprise security log queries dynamically',
+                    Icons.analytics,
+                    Colors.purpleAccent,
+                    const SplunkScreen(),
                   ),
                   const SizedBox(height: 12),
                   _buildMenuCard(
@@ -325,6 +444,7 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
+// 3. مولد قواعد سوريكاتا المتقدم
 class SuricataScreen extends StatefulWidget {
   const SuricataScreen({Key? key}) : super(key: key);
 
@@ -494,6 +614,7 @@ class _SuricataScreenState extends State<SuricataScreen> {
   }
 }
 
+// 4. مولد وايرشاك الديناميكي المخصص بالكتابة ووصف الطلب
 class WiresharkScreen extends StatefulWidget {
   const WiresharkScreen({Key? key}) : super(key: key);
 
@@ -502,54 +623,46 @@ class WiresharkScreen extends StatefulWidget {
 }
 
 class _WiresharkScreenState extends State<WiresharkScreen> {
-  final TextEditingController customQueryController = TextEditingController(text: 'http.request.method == "POST"');
-  String selectedPreset = 'HTTP POST Requests';
+  final TextEditingController reqController = TextEditingController(text: 'http.request.method == "POST"');
+  final TextEditingController ipFilterController = TextEditingController(text: '192.168.1.50');
+  String dynamicFilter = '';
 
-  final Map<String, String> presets = {
-    'HTTP POST Requests': 'http.request.method == "POST"',
-    'Specific IP Address': 'ip.addr == 192.168.1.100',
-    'Failed TCP Handshake (SYN-ACK missing)': 'tcp.flags.syn == 1 and tcp.flags.ack == 0',
-    'DNS Queries & Lookups': 'dns.qry.name',
-    'SSL/TLS Handshake Traffic': 'tls.handshake.type == 1',
-    'ICMP Ping Packets': 'icmp.type == 8',
-  };
+  @override
+  void initState() {
+    super.initState();
+    updateFilter();
+  }
+
+  void updateFilter() {
+    setState(() {
+      dynamicFilter = '${reqController.text} and ip.addr == ${ipFilterController.text}';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Smart Wireshark Filter Engine'), backgroundColor: const Color(0xFF131B2E)),
-      body: Padding(
+      appBar: AppBar(title: const Text('Dynamic Wireshark Engine'), backgroundColor: const Color(0xFF131B2E)),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButtonFormField<String>(
-              value: selectedPreset,
-              dropdownColor: const Color(0xFF131B2E),
-              decoration: const InputDecoration(labelText: 'Select Prebuilt Scenario', border: OutlineInputBorder()),
-              items: presets.keys
-                  .map((val) => DropdownMenuItem(value: val, child: Text(val)))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() {
-                    selectedPreset = val;
-                    customQueryController.text = presets[val]!;
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 16),
+            const Text('Describe & Build Packet Filters', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.cyanAccent)),
+            const SizedBox(height: 12),
             TextField(
-              controller: customQueryController,
-              decoration: const InputDecoration(
-                labelText: 'Custom / Live Filter Expression',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.filter_list, color: Colors.lightBlueAccent),
-              ),
+              controller: reqController,
+              decoration: const InputDecoration(labelText: 'Packet Field / HTTP / TCP Flag', border: OutlineInputBorder()),
+              onChanged: (_) => updateFilter(),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ipFilterController,
+              decoration: const InputDecoration(labelText: 'Target IP Address', border: OutlineInputBorder()),
+              onChanged: (_) => updateFilter(),
             ),
             const SizedBox(height: 20),
-            const Text('Final Display Filter:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            const Text('Generated Wireshark Display Filter:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -562,14 +675,14 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      customQueryController.text,
+                      dynamicFilter,
                       style: const TextStyle(fontFamily: 'monospace', color: Colors.lightBlueAccent, fontSize: 13),
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy, color: Colors.lightBlueAccent),
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: customQueryController.text));
+                      Clipboard.setData(ClipboardData(text: dynamicFilter));
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Display filter copied!')));
                     },
                   ),
@@ -583,6 +696,94 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
   }
 }
 
+// 5. مولد لغة Splunk SPL الجديد كلياً
+class SplunkScreen extends StatefulWidget {
+  const SplunkScreen({Key? key}) : super(key: key);
+
+  @override
+  _SplunkScreenState createState() => _SplunkScreenState();
+}
+
+class _SplunkScreenState extends State<SplunkScreen> {
+  final TextEditingController indexController = TextEditingController(text: 'index=security_logs');
+  final TextEditingController searchParamController = TextEditingController(text: 'failed_login');
+  final TextEditingController statsController = TextEditingController(text: 'clientip');
+  String generatedSpl = '';
+
+  @override
+  void initState() {
+    super.initState();
+    updateSpl();
+  }
+
+  void updateSpl() {
+    setState(() {
+      generatedSpl = '${indexController.text} sourcetype=* | search ${searchParamController.text} | stats count by ${statsController.text} | sort -count';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Splunk SPL Query Generator'), backgroundColor: const Color(0xFF131B2E)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: indexController,
+              decoration: const InputDecoration(labelText: 'Splunk Index & Source', border: OutlineInputBorder()),
+              onChanged: (_) => updateSpl(),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: searchParamController,
+              decoration: const InputDecoration(labelText: 'Search Keyword / Event', border: OutlineInputBorder()),
+              onChanged: (_) => updateSpl(),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: statsController,
+              decoration: const InputDecoration(labelText: 'Stats Group Field (e.g., clientip, user)', border: OutlineInputBorder()),
+              onChanged: (_) => updateSpl(),
+            ),
+            const SizedBox(height: 20),
+            const Text('Generated Splunk SPL Query:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131B2E),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.purpleAccent.withOpacity(0.5)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      generatedSpl,
+                      style: const TextStyle(fontFamily: 'monospace', color: Colors.purpleAccent, fontSize: 12),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy, color: Colors.purpleAccent),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: generatedSpl));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('SPL query copied!')));
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 6. محرك البحث والتحقيق لمؤشرات الاختراق IOCs مع زر المساعدة
 class CheatSheetScreen extends StatefulWidget {
   const CheatSheetScreen({Key? key}) : super(key: key);
 
@@ -694,7 +895,7 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.between,
                             children: [
                               Expanded(
                                 child: Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent, fontSize: 15)),
