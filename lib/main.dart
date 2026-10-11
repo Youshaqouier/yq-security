@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:crypto/crypto.dart'; // مكتبة التشفير الأمنية
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -30,14 +30,12 @@ class YQSecurityApp extends StatelessWidget {
   }
 }
 
-// دالة أمنية لتشفير كلمات المرور باستخدام SHA-256 لمنع تخزينها بشكل مكشوف
 String hashPassword(String password) {
   var bytes = utf8.encode(password);
   var digest = sha256.convert(bytes);
   return digest.toString();
 }
 
-// 1. شاشة تسجيل الدخول الأمنية والمشفرة
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -62,11 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // تطبيق التشفير الأمني لكلمة المرور قبل المعالجة
     String secureHashedPassword = hashPassword(password);
     debugPrint('Secure Hash Generated: $secureHashedPassword');
 
-    // انتقال آمن إلى لوحة التحكم
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => DashboardScreen(analystEmail: email)),
@@ -181,6 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
 
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
                   Expanded(child: Divider(color: Colors.grey)),
                   Padding(
@@ -242,7 +239,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// 2. لوحة التحكم الرئيسية للـ SOC
 class DashboardScreen extends StatelessWidget {
   final String analystEmail;
   const DashboardScreen({Key? key, required this.analystEmail}) : super(key: key);
@@ -342,7 +338,6 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-// 3. مولد قواعد سوريكاتا المتقدم
 class SuricataScreen extends StatefulWidget {
   const SuricataScreen({Key? key}) : super(key: key);
 
@@ -512,7 +507,6 @@ class _SuricataScreenState extends State<SuricataScreen> {
   }
 }
 
-// 4. مساعد فلاتر وايرشاك الذكي
 class WiresharkScreen extends StatefulWidget {
   const WiresharkScreen({Key? key}) : super(key: key);
 
@@ -602,7 +596,6 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
   }
 }
 
-// 5. مكتبة مؤشرات الاختراق والبحث مع زر المساعدة
 class CheatSheetScreen extends StatefulWidget {
   const CheatSheetScreen({Key? key}) : super(key: key);
 
