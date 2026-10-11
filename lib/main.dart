@@ -7,21 +7,8 @@ void main() {
   runApp(const YQSecurityApp());
 }
 
-class YQSecurityApp extends StatefulWidget {
+class YQSecurityApp extends StatelessWidget {
   const YQSecurityApp({Key? key}) : super(key: key);
-
-  @override
-  _YQSecurityAppState createState() => _YQSecurityAppState();
-}
-
-class _YQSecurityAppState extends State<YQSecurityApp> {
-  bool isArabic = false;
-
-  void toggleLanguage(bool val) {
-    setState(() {
-      isArabic = val;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,24 +24,20 @@ class _YQSecurityAppState extends State<YQSecurityApp> {
           secondary: Colors.cyanAccent,
         ),
       ),
-      home: LoginScreen(isArabic: isArabic, onLanguageToggle: toggleLanguage),
+      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-// محرك التشفير الآمن لتخزين كلمات المرور بمعايير Enterprise
 String hashSecurePassword(String password) {
   var bytes = utf8.encode(password);
   var digest = sha256.convert(bytes);
   return digest.toString();
 }
 
-// 1. شاشة تسجيل الدخول الآمن مع دعم SSO (Google & Facebook)
 class LoginScreen extends StatefulWidget {
-  final bool isArabic;
-  final Function(bool) onLanguageToggle;
-  const LoginScreen({Key? key, required this.isArabic, required this.onLanguageToggle}) : super(key: key);
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -67,10 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController nameController = TextEditingController();
 
   void _handleLogin({String name = 'SOC Analyst', String email = 'analyst@yqsecurity.com'}) {
-    // التحقق من قوة التشفير والأمان قبل الدخول
     if (passwordController.text.isNotEmpty) {
       String secureHash = hashSecurePassword(passwordController.text);
-      debugAuthLog('Encrypted Hash Generated: $secureHash');
+      debugPrint('Encrypted Hash: $secureHash');
     }
 
     Navigator.pushReplacement(
@@ -79,40 +61,14 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (context) => DashboardScreen(
           analystEmail: email,
           analystName: name,
-          isArabic: widget.isArabic,
-          onLanguageToggle: widget.onLanguageToggle,
         ),
       ),
     );
   }
 
-  void debugAuthLog(String msg) {
-    // سجلات أمان داخلية للمطور
-    debugPrint('[SECURE_AUTH_LOG] $msg');
-  }
-
   @override
   Widget build(BuildContext context) {
-    bool ar = widget.isArabic;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Text(ar ? 'العربية' : 'EN', style: const TextStyle(fontSize: 12)),
-                Switch(
-                  value: ar,
-                  onChanged: (val) => widget.onLanguageToggle(val),
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -150,25 +106,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              Text(
-                ar ? 'منصة yqsecurity الأمنية' : 'yqsecurity SOC',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.5),
+              const Text(
+                'yqsecurity SOC',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.5),
               ),
               const SizedBox(height: 6),
-              Text(
-                ar ? 'مركز عمليات الاستجابة والتحقيق السيبراني المشفر' : 'Enterprise Threat Intelligence & Operations Hub',
+              const Text(
+                'Enterprise Threat Intelligence & Operations Hub',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 32),
               
               if (isSignUpMode) ...[
                 TextField(
                   controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: ar ? 'اسم المحلل / المستخدم' : 'Full Name / Analyst ID',
-                    prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent),
-                    border: const OutlineInputBorder(),
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name / Analyst ID',
+                    prefixIcon: Icon(Icons.person, color: Colors.cyanAccent),
+                    border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -177,20 +133,20 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: ar ? 'البريد الإلكتروني المعتمد' : 'Secure Analyst Email',
-                  prefixIcon: const Icon(Icons.email, color: Colors.blueAccent),
-                  border: const OutlineInputBorder(),
+                decoration: const InputDecoration(
+                  labelText: 'Secure Analyst Email',
+                  prefixIcon: Icon(Icons.email, color: Colors.blueAccent),
+                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: InputDecoration(
-                  labelText: ar ? 'كلمة المرور الرئيسية (تشفير SHA-256)' : 'Master Password (SHA-256 Encrypted)',
-                  prefixIcon: const Icon(Icons.lock_outline, color: Colors.blueAccent),
-                  border: const OutlineInputBorder(),
+                decoration: const InputDecoration(
+                  labelText: 'Master Password (Encrypted)',
+                  prefixIcon: Icon(Icons.lock_outline, color: Colors.blueAccent),
+                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -203,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(ar ? 'يرجى إدخال البريد وكلمة المرور' : 'Please enter email and password')),
+                        const SnackBar(content: Text('Please enter email and password')),
                       );
                       return;
                     }
@@ -213,21 +169,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     );
                   },
                   child: Text(
-                    isSignUpMode ? (ar ? 'إنشاء حساب مشفر جديد' : 'Create Encrypted Account') : (ar ? 'تسجيل الدخول الآمن' : 'Secure Login'),
+                    isSignUpMode ? 'Create Encrypted Account' : 'Secure Login',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
 
-              // الدخول السريع عبر Google أو Facebook (استمرار تلقائي)
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
                       icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.cyanAccent),
-                      label: Text(ar ? 'متابعة بـ Google' : 'Google SSO', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      label: const Text('Google SSO', style: TextStyle(color: Colors.white, fontSize: 13)),
                       onPressed: () => _handleLogin(name: 'Google Analyst', email: 'google.analyst@yqsecurity.com'),
                     ),
                   ),
@@ -236,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
                       icon: const Icon(Icons.facebook, size: 20, color: Colors.blue),
-                      label: Text(ar ? 'متابعة بـ Facebook' : 'Facebook', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      label: const Text('Facebook', style: TextStyle(color: Colors.white, fontSize: 13)),
                       onPressed: () => _handleLogin(name: 'Facebook Analyst', email: 'fb.analyst@yqsecurity.com'),
                     ),
                   ),
@@ -251,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   });
                 },
                 child: Text(
-                  isSignUpMode ? (ar ? 'لديك حساب بالفعل؟ تسجيل الدخول' : 'Already registered? Secure Login') : (ar ? 'تحتاج حساب محلل أمني؟ إنشاء حساب' : 'Need an analyst account? Sign Up'),
+                  isSignUpMode ? 'Already registered? Secure Login' : 'Need an analyst account? Sign Up',
                   style: const TextStyle(color: Colors.cyanAccent, fontSize: 13),
                 ),
               ),
@@ -263,19 +218,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// 2. لوحة التحكم الرئيسية (Dashboard) مع القائمة الجانبية وإدارة الحساب الشاملة
 class DashboardScreen extends StatefulWidget {
   final String analystEmail;
   final String analystName;
-  final bool isArabic;
-  final Function(bool) onLanguageToggle;
 
   const DashboardScreen({
     Key? key,
     required this.analystEmail,
     required this.analystName,
-    required this.isArabic,
-    required this.onLanguageToggle,
   }) : super(key: key);
 
   @override
@@ -286,6 +236,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late String currentName;
   late String currentEmail;
   String profileImageUrl = '';
+  bool isArabic = false;
 
   @override
   void initState() {
@@ -299,7 +250,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final TextEditingController emailEditController = TextEditingController(text: currentEmail);
     final TextEditingController passEditController = TextEditingController();
     final TextEditingController imageEditController = TextEditingController(text: profileImageUrl);
-    bool ar = widget.isArabic;
 
     showModalBottomSheet(
       context: context,
@@ -318,27 +268,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(ar ? 'إعدادات الملف الشخصي وتشفير الأمان' : 'SOC Analyst Settings & Security Profile', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.cyanAccent)),
+              Text(isArabic ? 'إعدادات الملف الشخصي والأمان' : 'SOC Analyst Settings & Profile', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.cyanAccent)),
               const SizedBox(height: 16),
               TextField(
                 controller: nameEditController,
-                decoration: InputDecoration(labelText: ar ? 'تعديل اسم المستخدم' : 'Change Username', border: const OutlineInputBorder()),
+                decoration: InputDecoration(labelText: isArabic ? 'تعديل اسم المستخدم' : 'Change Username', border: const OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: emailEditController,
-                decoration: InputDecoration(labelText: ar ? 'تعديل البريد الإلكتروني' : 'Change Email', border: const OutlineInputBorder()),
+                decoration: InputDecoration(labelText: isArabic ? 'تعديل البريد الإلكتروني' : 'Change Email', border: const OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: passEditController,
                 obscureText: true,
-                decoration: InputDecoration(labelText: ar ? 'كلمة المرور الرئيسية الجديدة' : 'New Master Password', border: const OutlineInputBorder()),
+                decoration: InputDecoration(labelText: isArabic ? 'كلمة المرور الجديدة' : 'New Master Password', border: const OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: imageEditController,
-                decoration: InputDecoration(labelText: ar ? 'رابط صورة البروفايل (Avatar URL)' : 'Profile Image URL', border: const OutlineInputBorder()),
+                decoration: InputDecoration(labelText: isArabic ? 'رابط صورة البروفايل (Avatar URL)' : 'Profile Image URL', border: const OutlineInputBorder()),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -353,10 +303,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     });
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(ar ? 'تم تحديث الملف الشخصي وتشفير البيانات بنجاح!' : 'Profile and encryption settings updated successfully!')),
+                      SnackBar(content: Text(isArabic ? 'تم تحديث الملف الشخصي بنجاح!' : 'Profile updated successfully!')),
                     );
                   },
-                  child: Text(ar ? 'حفظ التعديلات الأمنية' : 'Save Profile Settings'),
+                  child: Text(isArabic ? 'حفظ التعديلات' : 'Save Profile Settings'),
                 ),
               ),
               const SizedBox(height: 20),
@@ -369,10 +319,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool ar = widget.isArabic;
     return Scaffold(
       appBar: AppBar(
-        title: Text(ar ? 'yqsecurity - مركز عمليات الأمان' : 'yqsecurity - Operations Hub'),
+        title: Text(isArabic ? 'yqsecurity - مركز العمليات' : 'yqsecurity - Operations Hub'),
         centerTitle: true,
         backgroundColor: const Color(0xFF131B2E),
         actions: [
@@ -381,7 +330,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => LoginScreen(isArabic: ar, onLanguageToggle: widget.onLanguageToggle)),
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
               );
             },
           )
@@ -404,7 +353,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.settings, color: Colors.cyanAccent),
-              title: Text(ar ? 'إعدادات الحساب والبروفايل' : 'Settings & Profile'),
+              title: Text(isArabic ? 'الإعدادات والملف الشخصي' : 'Settings & Profile'),
               onTap: () {
                 Navigator.pop(context);
                 _showSettingsModal(context);
@@ -412,23 +361,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.language, color: Colors.blueAccent),
-              title: Text(ar ? 'اللغة: العربية' : 'Language: English'),
+              title: Text(isArabic ? 'اللغة: العربية' : 'Language: English'),
               trailing: Switch(
-                value: ar,
+                value: isArabic,
                 onChanged: (val) {
-                  widget.onLanguageToggle(val);
-                  setState(() {});
+                  setState(() {
+                    isArabic = val;
+                  });
                 },
               ),
             ),
             const Divider(color: Colors.grey),
             ListTile(
               leading: const Icon(Icons.exit_to_app, color: Colors.redAccent),
-              title: Text(ar ? 'تسجيل الخروج الآمن' : 'Logout Securely'),
+              title: Text(isArabic ? 'تسجيل الخروج' : 'Logout Securely'),
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen(isArabic: ar, onLanguageToggle: widget.onLanguageToggle)),
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
                 );
               },
             ),
@@ -440,50 +390,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(ar ? 'المحلل النشط: $currentName' : 'Active Analyst: $currentName', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
+            Text(isArabic ? 'المحلل النشط: $currentName' : 'Active Analyst: $currentName', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
             const SizedBox(height: 10),
-            Text(ar ? 'أدوات الاستجابة السيبرانية المشفرة' : 'Encrypted SOC Toolkits', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.cyanAccent)),
+            Text(isArabic ? 'أدوات الاستجابة السيبرانية المشفرة' : 'Encrypted SOC Toolkits', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.cyanAccent)),
             const SizedBox(height: 6),
-            Text(ar ? 'اختر أداة التحليل المتقدمة أدناه:' : 'Select an advanced security engine below:', style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            Text(isArabic ? 'اختر أداة التحليل المتقدمة أدناه:' : 'Select an advanced security engine below:', style: const TextStyle(fontSize: 13, color: Colors.grey)),
             const SizedBox(height: 20),
             Expanded(
               child: ListView(
                 children: [
-                  _buildMenuCard(
-                    context,
-                    ar ? 'مولد قواعد سوريكاتا المتقدم' : 'Advanced Suricata Rule Builder',
-                    ar ? 'تخصيص العناوين، المنافذ، والتوقيعات الأمنية' : 'Custom IPs, Ports, Protocols & Signatures',
-                    Icons.security,
-                    Colors.orangeAccent,
-                    SuricataScreen(isArabic: ar),
-                  ),
+                  _buildMenuCard(context, 'Advanced Suricata Rule Builder', 'Custom IPs, Protocols & Signatures', Icons.security, Colors.orangeAccent, SuricataScreen(isArabic: isArabic)),
                   const SizedBox(height: 12),
-                  _buildMenuCard(
-                    context,
-                    ar ? 'مولد فلاتر وايرشاك الاحترافي' : 'Professional Wireshark Filter Engine',
-                    ar ? 'فلاتر الالتقاط والعرض مع الشرح التفصيلي' : 'Capture & Display filters with detailed descriptions',
-                    Icons.network_check,
-                    Colors.lightBlueAccent,
-                    WiresharkScreen(isArabic: ar),
-                  ),
+                  _buildMenuCard(context, 'Professional Wireshark Filter Engine', 'Capture & Display filters with descriptions', Icons.network_check, Colors.lightBlueAccent, WiresharkScreen(isArabic: isArabic)),
                   const SizedBox(height: 12),
-                  _buildMenuCard(
-                    context,
-                    ar ? 'مولد استعلامات Splunk SPL' : 'Splunk SPL Query Generator',
-                    ar ? 'بناء استعلامات تحليل السجلات الأمنية بذكاء' : 'Build enterprise security log queries dynamically',
-                    Icons.analytics,
-                    Colors.purpleAccent,
-                    SplunkScreen(isArabic: ar),
-                  ),
+                  _buildMenuCard(context, 'Splunk SPL Query Generator', 'Build enterprise security log queries dynamically', Icons.analytics, Colors.purpleAccent, SplunkScreen(isArabic: isArabic)),
                   const SizedBox(height: 12),
-                  _buildMenuCard(
-                    context,
-                    ar ? 'مكتبة مؤشرات الاختراق (IOCs)' : 'IOCs & Threat Intelligence Hub',
-                    ar ? 'قاعدة بيانات شاملة لكافة هجمات الأمن السيبراني' : 'Comprehensive searchable database of all cybersecurity attacks',
-                    Icons.menu_book,
-                    Colors.greenAccent,
-                    CheatSheetScreen(isArabic: ar),
-                  ),
+                  _buildMenuCard(context, 'IOCs & Threat Intelligence Hub', 'Searchable database of all cybersecurity attacks', Icons.menu_book, Colors.greenAccent, CheatSheetScreen(isArabic: isArabic)),
                 ],
               ),
             ),
@@ -511,7 +433,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// 3. مولد قواعد سوريكاتا
 class SuricataScreen extends StatefulWidget {
   final bool isArabic;
   const SuricataScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -521,11 +442,7 @@ class SuricataScreen extends StatefulWidget {
 class _SuricataScreenState extends State<SuricataScreen> {
   String selectedAction = 'alert';
   String selectedProtocol = 'tcp';
-  final TextEditingController srcIpController = TextEditingController(text: 'any');
-  final TextEditingController srcPortController = TextEditingController(text: 'any');
-  final TextEditingController dstIpController = TextEditingController(text: 'any');
-  final TextEditingController dstPortController = TextEditingController(text: '80');
-  final TextEditingController msgController = TextEditingController(text: 'Suspicious Web Attack Detected');
+  final TextEditingController msgController = TextEditingController(text: 'Suspicious Web Attack');
   final TextEditingController contentController = TextEditingController(text: '/admin/shell.php');
   final TextEditingController sidController = TextEditingController(text: '200001');
   String generatedRule = '';
@@ -538,7 +455,7 @@ class _SuricataScreenState extends State<SuricataScreen> {
 
   void updateRule() {
     setState(() {
-      generatedRule = '$selectedAction $selectedProtocol ${srcIpController.text} ${srcPortController.text} -> ${dstIpController.text} ${dstPortController.text} (msg:"${msgController.text}"; content:"${contentController.text}"; sid:${sidController.text}; rev:1;)';
+      generatedRule = '$selectedAction $selectedProtocol any any -> any 80 (msg:"${msgController.text}"; content:"${contentController.text}"; sid:${sidController.text}; rev:1;)';
     });
   }
 
@@ -548,14 +465,14 @@ class _SuricataScreenState extends State<SuricataScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(ar ? 'مولد قواعد سوريكاتا' : 'Suricata Rule Builder'), backgroundColor: const Color(0xFF131B2E)),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(controller: msgController, decoration: InputDecoration(labelText: ar ? 'رسالة التنبيه (msg)' : 'Alert Message'), onChanged: (_) => updateRule()),
+            TextField(controller: msgController, decoration: InputDecoration(labelText: ar ? 'رسالة التنبيه' : 'Alert Message'), onChanged: (_) => updateRule()),
             const SizedBox(height: 12),
-            TextField(controller: contentController, decoration: InputDecoration(labelText: ar ? 'محتوى التوقيع (Pattern)' : 'Signature Content'), onChanged: (_) => updateRule()),
+            TextField(controller: contentController, decoration: InputDecoration(labelText: ar ? 'محتوى التوقيع' : 'Content Pattern'), onChanged: (_) => updateRule()),
             const SizedBox(height: 12),
-            TextField(controller: sidController, decoration: InputDecoration(labelText: ar ? 'رقم القاعدة (SID)' : 'Rule SID'), onChanged: (_) => updateRule()),
+            TextField(controller: sidController, decoration: InputDecoration(labelText: ar ? 'رقم القاعدة SID' : 'Rule SID'), onChanged: (_) => updateRule()),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(12),
@@ -567,9 +484,9 @@ class _SuricataScreenState extends State<SuricataScreen> {
                     icon: const Icon(Icons.copy, color: Colors.orangeAccent),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: generatedRule));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم نسخ القاعدة!' : 'Rule copied!')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم النسخ!' : 'Copied!')));
                     },
-                  )
+                  ),
                 ],
               ),
             ),
@@ -580,7 +497,6 @@ class _SuricataScreenState extends State<SuricataScreen> {
   }
 }
 
-// 4. مولد فلاتر وايرشاك (Capture & Display مع شرح تفصيلي)
 class WiresharkScreen extends StatefulWidget {
   final bool isArabic;
   const WiresharkScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -588,19 +504,17 @@ class WiresharkScreen extends StatefulWidget {
   _WiresharkScreenState createState() => _WiresharkScreenState();
 }
 class _WiresharkScreenState extends State<WiresharkScreen> {
-  final TextEditingController searchController = TextEditingController();
   final List<Map<String, String>> filters = [
-    {'type': 'Display Filter', 'title': 'HTTP POST Requests', 'filter': 'http.request.method == "POST"', 'desc': 'Tracks HTTP post submissions and form credential uploads.'},
-    {'type': 'Display Filter', 'title': 'Specific IP Stream', 'filter': 'ip.addr == 192.168.1.100', 'desc': 'Isolates traffic for a specific target host IP address.'},
-    {'type': 'Display Filter', 'title': 'TCP Port Scan', 'filter': 'tcp.flags.syn == 1 and tcp.flags.ack == 0', 'desc': 'Detects half-open TCP SYN packets indicating reconnaissance.'},
-    {'type': 'Capture Filter', 'title': 'Web Traffic Only', 'filter': 'port 80 or port 443', 'desc': 'Captures only web traffic on ports 80 and 443.'},
+    {'type': 'Display Filter', 'title': 'HTTP POST', 'filter': 'http.request.method == "POST"', 'desc': 'Tracks HTTP post requests and forms.'},
+    {'type': 'Display Filter', 'title': 'IP Address', 'filter': 'ip.addr == 192.168.1.100', 'desc': 'Isolates traffic for specific IP.'},
+    {'type': 'Capture Filter', 'title': 'Web Traffic', 'filter': 'port 80 or port 443', 'desc': 'Captures web traffic only.'},
   ];
 
   @override
   Widget build(BuildContext context) {
     bool ar = widget.isArabic;
     return Scaffold(
-      appBar: AppBar(title: Text(ar ? 'فلاتر وايرشاك الذكية' : 'Wireshark Filter Engine'), backgroundColor: const Color(0xFF131B2E)),
+      appBar: AppBar(title: Text(ar ? 'فلاتر وايرشاك' : 'Wireshark Filter Engine'), backgroundColor: const Color(0xFF131B2E)),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: filters.length,
@@ -627,7 +541,7 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
                           icon: const Icon(Icons.copy, size: 18, color: Colors.lightBlueAccent),
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: f['filter']!));
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم نسخ الفلتر!' : 'Filter copied!')));
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم النسخ!' : 'Copied!')));
                           },
                         ),
                       ],
@@ -643,7 +557,6 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
   }
 }
 
-// 5. مولد استعلامات Splunk SPL
 class SplunkScreen extends StatefulWidget {
   final bool isArabic;
   const SplunkScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -671,14 +584,14 @@ class _SplunkScreenState extends State<SplunkScreen> {
   Widget build(BuildContext context) {
     bool ar = widget.isArabic;
     return Scaffold(
-      appBar: AppBar(title: Text(ar ? 'مولد استعلامات Splunk' : 'Splunk SPL Generator'), backgroundColor: const Color(0xFF131B2E)),
+      appBar: AppBar(title: Text(ar ? 'مولد Splunk' : 'Splunk SPL Generator'), backgroundColor: const Color(0xFF131B2E)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(controller: indexController, decoration: InputDecoration(labelText: ar ? 'فهرس السجلات (Index)' : 'Splunk Index'), onChanged: (_) => updateSpl()),
+            TextField(controller: indexController, decoration: InputDecoration(labelText: ar ? 'الفهرس' : 'Splunk Index'), onChanged: (_) => updateSpl()),
             const SizedBox(height: 12),
-            TextField(controller: searchController, decoration: InputDecoration(labelText: ar ? 'كلمة البحث أو الحدث' : 'Search Keyword'), onChanged: (_) => updateSpl()),
+            TextField(controller: searchController, decoration: InputDecoration(labelText: ar ? 'كلمة البحث' : 'Search Keyword'), onChanged: (_) => updateSpl()),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(12),
@@ -690,7 +603,7 @@ class _SplunkScreenState extends State<SplunkScreen> {
                     icon: const Icon(Icons.copy, color: Colors.purpleAccent),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: generatedSpl));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم نسخ استعلام SPL!' : 'SPL copied!')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم النسخ!' : 'Copied!')));
                     },
                   ),
                 ],
@@ -703,7 +616,6 @@ class _SplunkScreenState extends State<SplunkScreen> {
   }
 }
 
-// 6. مكتبة مؤشرات الاختراق (IOCs) الشاملة مع محرك البحث وزر المساعدة والشرح
 class CheatSheetScreen extends StatefulWidget {
   final bool isArabic;
   const CheatSheetScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -713,30 +625,9 @@ class CheatSheetScreen extends StatefulWidget {
 class _CheatSheetScreenState extends State<CheatSheetScreen> {
   final TextEditingController searchController = TextEditingController();
   final List<Map<String, String>> attacks = [
-    {
-      'category': 'Ransomware / برمجيات الفدية',
-      'title': 'Ransomware File Extension .locked',
-      'code': 'content:".locked";',
-      'desc': 'Spots known ransomware extension patterns transferred or requested across network streams.'
-    },
-    {
-      'category': 'Injection / حقن قواعد البيانات',
-      'title': 'SQL Injection Authentication Bypass',
-      'code': 'content:"OR 1=1";',
-      'desc': 'Identifies common SQL injection syntax in web traffic parameters designed to bypass login forms.'
-    },
-    {
-      'category': 'Brute Force / هجمات القوة العمياء',
-      'title': 'SSH Brute Force Detection',
-      'code': 'threshold:type threshold, track by_src, count 5, seconds 60;',
-      'desc': 'Monitors repeated connection failures from a single IP address indicating brute forcing.'
-    },
-    {
-      'category': 'Malware / البرمجيات الخبيثة',
-      'title': 'Cobalt Strike C2 Beacon Pattern',
-      'code': 'content:"Jitter";',
-      'desc': 'Detects command and control (C2) communication signatures associated with advanced adversaries.'
-    }
+    {'title': 'Ransomware .locked', 'code': 'content:".locked";', 'desc': 'Detects ransomware file extensions.'},
+    {'title': 'SQL Injection OR 1=1', 'code': 'content:"OR 1=1";', 'desc': 'Detects login bypass attempts.'},
+    {'title': 'SSH Brute Force', 'code': 'threshold:type threshold, track by_src, count 5, seconds 60;', 'desc': 'Detects brute forcing.'},
   ];
 
   List<Map<String, String>> filteredAttacks = [];
@@ -745,34 +636,22 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
   void initState() {
     super.initState();
     filteredAttacks = attacks;
-    searchController.addListener(_filterSearch);
-  }
-
-  void _filterSearch() {
-    final query = searchController.text.toLowerCase();
-    setState(() {
-      filteredAttacks = attacks.where((item) {
-        return item['title']!.toLowerCase().contains(query) ||
-               item['code']!.toLowerCase().contains(query) ||
-               item['desc']!.toLowerCase().contains(query) ||
-               item['category']!.toLowerCase().contains(query);
-      }).toList();
+    searchController.addListener(() {
+      final q = searchController.text.toLowerCase();
+      setState(() {
+        filteredAttacks = attacks.where((item) => item['title']!.toLowerCase().contains(q) || item['desc']!.toLowerCase().contains(q)).toList();
+      });
     });
   }
 
-  void _showHelpDialog(BuildContext context, String title, String description) {
+  void _showHelpDialog(BuildContext context, String title, String desc) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF131B2E),
         title: Text(title, style: const TextStyle(color: Colors.greenAccent)),
-        content: Text(description, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Got it', style: TextStyle(color: Colors.blueAccent)),
-          ),
-        ],
+        content: Text(desc, style: const TextStyle(color: Colors.white70)),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
       ),
     );
   }
@@ -781,19 +660,12 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
   Widget build(BuildContext context) {
     bool ar = widget.isArabic;
     return Scaffold(
-      appBar: AppBar(title: Text(ar ? 'مكتبة مؤشرات الاختراق (IOCs)' : 'Threat Intelligence & IOCs Hub'), backgroundColor: const Color(0xFF131B2E)),
+      appBar: AppBar(title: Text(ar ? 'مكتبة مؤشرات الاختراق' : 'IOCs Hub'), backgroundColor: const Color(0xFF131B2E)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: ar ? 'بحث عن أي هجمة (ransomware, sql injection, brute force)...' : 'Search any attack (ransomware, sql injection, brute force)...',
-                prefixIcon: const Icon(Icons.search, color: Colors.greenAccent),
-                border: const OutlineInputBorder(),
-              ),
-            ),
+            TextField(controller: searchController, decoration: InputDecoration(labelText: ar ? 'بحث عن الهجمات...' : 'Search attacks...')),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
@@ -808,22 +680,10 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.between,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(att['category']!, style: const TextStyle(fontSize: 10, color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 2),
-                                    Text(att['title']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent, fontSize: 15)),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.help_outline, color: Colors.orangeAccent, size: 20),
-                                onPressed: () => _showHelpDialog(context, att['title']!, att['desc']!),
-                              ),
+                              Text(att['title']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent, fontSize: 15)),
+                              IconButton(icon: const Icon(Icons.help_outline, color: Colors.orangeAccent), onPressed: () => _showHelpDialog(context, att['title']!, att['desc']!)),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -833,13 +693,7 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
                             child: Row(
                               children: [
                                 Expanded(child: Text(att['code']!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white))),
-                                IconButton(
-                                  icon: const Icon(Icons.copy, size: 18, color: Colors.greenAccent),
-                                  onPressed: () {
-                                    Clipboard.setData(ClipboardData(text: att['code']!));
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم نسخ مؤشر الاختراق!' : 'IOC Rule copied!')));
-                                  },
-                                ),
+                                IconButton(icon: const Icon(Icons.copy, size: 18, color: Colors.greenAccent), onPressed: () => Clipboard.setData(ClipboardData(text: att['code']!))),
                               ],
                             ),
                           ),
