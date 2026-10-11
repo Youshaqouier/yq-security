@@ -11,20 +11,219 @@ class YQSecurityApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'YQ Security',
+      title: 'YQ Security Enterprise',
       theme: ThemeData(
         brightness: Brightness.dark,
-        primarySwatch: Colors.blueGrey,
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        cardColor: const Color(0xFF1E1E1E),
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: const Color(0xFF0A0F1D), // Deep Cyber Dark Navy
+        cardColor: const Color(0xFF131B2E),
+        colorScheme: const ColorScheme.dark(
+          primary: Colors.blueAccent,
+          secondary: Colors.cyanAccent,
+        ),
       ),
-      home: const DashboardScreen(),
+      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-// 1. الشاشة الرئيسية (لوحة التحكم)
+// 1. شاشة تسجيل الدخول الأمنية مع شعار الدرع والهوية البصرية و Google Connect
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({Key? key}) : super(key: key);
+
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool isSignUpMode = false;
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+
+  void _handleAuthAction(BuildContext context) {
+    // محاكاة عملية تسجيل الدخول أو إنشاء الحساب بنجاح والانتقال للوحة التحكم
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // شعار الدرع الأمني مع حرفي YQ
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.cyanAccent.withOpacity(0.6), width: 2),
+                  color: Colors.blue.withOpacity(0.1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.cyanAccent.withOpacity(0.2),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    )
+                  ],
+                ),
+                child: const Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(Icons.shield_rounded, size: 70, color: Colors.blueAccent),
+                    Text(
+                      'YQ',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.cyanAccent,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'YQ SECURITY SOC',
+                style: TextStyle(
+                  fontSize: 24, 
+                  fontWeight: FontWeight.bold, 
+                  color: Colors.white, 
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Enterprise Threat Intelligence & Operations Hub',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 32),
+              
+              if (isSignUpMode) ...[
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name / Analyst ID',
+                    prefixIcon: Icon(Icons.person, color: Colors.cyanAccent),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Analyst Email',
+                  prefixIcon: Icon(Icons.email, color: Colors.blueAccent),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: Icon(Icons.lock, color: Colors.blueAccent),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // زر الدخول التقليدي
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () => _handleAuthAction(context),
+                  child: Text(
+                    isSignUpMode ? 'Create Account' : 'Login to Dashboard', 
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // فاصل أو
+              Row(
+                children: const [
+                  Expanded(child: Divider(color: Colors.grey)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Text('OR CONNECT WITH', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey)),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // أزرار التسجيل عبر جوجل وشبكات التواصل الاجتماعي
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.cyanAccent),
+                      label: const Text('Google', style: TextStyle(color: Colors.white, fontSize: 13)),
+                      onPressed: () => _handleAuthAction(context),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.security, size: 20, color: Colors.orangeAccent),
+                      label: const Text('SSO / ID', style: TextStyle(color: Colors.white, fontSize: 13)),
+                      onPressed: () => _handleAuthAction(context),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // تبديل الوضع بين تسجيل الدخول وإنشاء حساب
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    isSignUpMode = !isSignUpMode;
+                  });
+                },
+                child: Text(
+                  isSignUpMode ? 'Already have an account? Login' : 'Need an analyst account? Sign Up',
+                  style: const TextStyle(color: Colors.cyanAccent, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// 2. لوحة التحكم الرئيسية للـ SOC
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
@@ -32,9 +231,20 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('YQ Security - SOC Assistant'),
+        title: const Text('YQ Security - Operations Hub'),
         centerTitle: true,
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF131B2E),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          )
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -42,12 +252,12 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Security Operations Center Toolkit',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+              'Active SOC Toolkits',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.cyanAccent),
             ),
             const SizedBox(height: 6),
             const Text(
-              'Select a tool below to begin your analysis:',
+              'Select an advanced security engine below:',
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 20),
@@ -56,8 +266,8 @@ class DashboardScreen extends StatelessWidget {
                 children: [
                   _buildMenuCard(
                     context,
-                    'Suricata Rule Generator',
-                    'Generate intrusion detection rules quickly',
+                    'Advanced Suricata Rule Builder',
+                    'Custom IPs, Ports, Protocols & Signatures',
                     Icons.security,
                     Colors.orangeAccent,
                     const SuricataScreen(),
@@ -65,8 +275,8 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     context,
-                    'Wireshark Filter Helper',
-                    'Convert plain concepts to exact packet filters',
+                    'Smart Wireshark Filter Engine',
+                    'Natural language & precise packet filtering',
                     Icons.network_check,
                     Colors.lightBlueAccent,
                     const WiresharkScreen(),
@@ -74,8 +284,8 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     context,
-                    'IOCs & Cheat Sheet',
-                    'Quick reference for common security queries',
+                    'IOCs & Threat Intelligence Hub',
+                    'Searchable database with detailed analysis & help',
                     Icons.menu_book,
                     Colors.greenAccent,
                     const CheatSheetScreen(),
@@ -92,9 +302,9 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildMenuCard(BuildContext context, String title, String subtitle, IconData icon, Color color, Widget targetScreen) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
+      elevation: 4,
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         leading: Icon(icon, color: color, size: 36),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -107,7 +317,7 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-// 2. أداة مولد قواعد سوريكاتا
+// 3. مولد قواعد سوريكاتا المتقدم
 class SuricataScreen extends StatefulWidget {
   const SuricataScreen({Key? key}) : super(key: key);
 
@@ -116,10 +326,17 @@ class SuricataScreen extends StatefulWidget {
 }
 
 class _SuricataScreenState extends State<SuricataScreen> {
-  String selectedProtocol = 'alert tcp';
-  final TextEditingController msgController = TextEditingController(text: 'Suspicious HTTP Request');
-  final TextEditingController contentController = TextEditingController(text: '/admin/login.php');
-  final TextEditingController sidController = TextEditingController(text: '100001');
+  String selectedAction = 'alert';
+  String selectedProtocol = 'tcp';
+  
+  final TextEditingController srcIpController = TextEditingController(text: 'any');
+  final TextEditingController srcPortController = TextEditingController(text: 'any');
+  final TextEditingController dstIpController = TextEditingController(text: 'any');
+  final TextEditingController dstPortController = TextEditingController(text: '80');
+  
+  final TextEditingController msgController = TextEditingController(text: 'Suspicious Web Attack Detected');
+  final TextEditingController contentController = TextEditingController(text: '/admin/shell.php');
+  final TextEditingController sidController = TextEditingController(text: '200001');
 
   String generatedRule = '';
 
@@ -131,7 +348,9 @@ class _SuricataScreenState extends State<SuricataScreen> {
 
   void updateRule() {
     setState(() {
-      generatedRule = '$selectedProtocol any any -> any any '
+      generatedRule = '$selectedAction $selectedProtocol '
+          '${srcIpController.text} ${srcPortController.text} -> '
+          '${dstIpController.text} ${dstPortController.text} '
           '(msg:"${msgController.text}"; '
           'content:"${contentController.text}"; '
           'sid:${sidController.text}; rev:1;)';
@@ -141,25 +360,78 @@ class _SuricataScreenState extends State<SuricataScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Suricata Rule Generator'), backgroundColor: const Color(0xFF1E1E1E)),
+      appBar: AppBar(title: const Text('Advanced Suricata Builder'), backgroundColor: const Color(0xFF131B2E)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButtonFormField<String>(
-              value: selectedProtocol,
-              dropdownColor: const Color(0xFF1E1E1E),
-              decoration: const InputDecoration(labelText: 'Action & Protocol', border: OutlineInputBorder()),
-              items: ['alert tcp', 'alert udp', 'alert icmp', 'drop tcp']
-                  .map((val) => DropdownMenuItem(value: val, child: Text(val)))
-                  .toList(),
-              onChanged: (val) {
-                setState(() {
-                  selectedProtocol = val!;
-                  updateRule();
-                });
-              },
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedAction,
+                    dropdownColor: const Color(0xFF131B2E),
+                    decoration: const InputDecoration(labelText: 'Action', border: OutlineInputBorder()),
+                    items: ['alert', 'drop', 'pass', 'reject']
+                        .map((val) => DropdownMenuItem(value: val, child: Text(val)))
+                        .toList(),
+                    onChanged: (val) { setState(() { selectedAction = val!; updateRule(); }); },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedProtocol,
+                    dropdownColor: const Color(0xFF131B2E),
+                    decoration: const InputDecoration(labelText: 'Protocol', border: OutlineInputBorder()),
+                    items: ['tcp', 'udp', 'icmp', 'ip']
+                        .map((val) => DropdownMenuItem(value: val, child: Text(val)))
+                        .toList(),
+                    onChanged: (val) { setState(() { selectedProtocol = val!; updateRule(); }); },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: srcIpController,
+                    decoration: const InputDecoration(labelText: 'Source IP', border: OutlineInputBorder()),
+                    onChanged: (_) => updateRule(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: srcPortController,
+                    decoration: const InputDecoration(labelText: 'Source Port', border: OutlineInputBorder()),
+                    onChanged: (_) => updateRule(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: dstIpController,
+                    decoration: const InputDecoration(labelText: 'Dest IP', border: OutlineInputBorder()),
+                    onChanged: (_) => updateRule(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: dstPortController,
+                    decoration: const InputDecoration(labelText: 'Dest Port', border: OutlineInputBorder()),
+                    onChanged: (_) => updateRule(),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             TextField(
@@ -170,7 +442,7 @@ class _SuricataScreenState extends State<SuricataScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: contentController,
-              decoration: const InputDecoration(labelText: 'Signature Content', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Signature Content (Pattern)', border: OutlineInputBorder()),
               onChanged: (_) => updateRule(),
             ),
             const SizedBox(height: 12),
@@ -181,12 +453,12 @@ class _SuricataScreenState extends State<SuricataScreen> {
               onChanged: (_) => updateRule(),
             ),
             const SizedBox(height: 20),
-            const Text('Generated Rule:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            const Text('Generated Signature:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
+                color: const Color(0xFF131B2E),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.orangeAccent.withOpacity(0.5)),
               ),
@@ -202,7 +474,7 @@ class _SuricataScreenState extends State<SuricataScreen> {
                     icon: const Icon(Icons.copy, color: Colors.orangeAccent),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: generatedRule));
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ القاعدة بنجاح!')));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rule copied successfully!')));
                     },
                   ),
                 ],
@@ -215,7 +487,7 @@ class _SuricataScreenState extends State<SuricataScreen> {
   }
 }
 
-// 3. أداة مساعد فلاتر وايرشاك
+// 4. مساعد فلاتر وايرشاك الذكي
 class WiresharkScreen extends StatefulWidget {
   const WiresharkScreen({Key? key}) : super(key: key);
 
@@ -224,52 +496,59 @@ class WiresharkScreen extends StatefulWidget {
 }
 
 class _WiresharkScreenState extends State<WiresharkScreen> {
-  String selectedFilterType = 'HTTP POST Requests';
-  final TextEditingController paramController = TextEditingController(text: 'POST');
-  String resultingFilter = 'http.request.method == "POST"';
+  final TextEditingController customQueryController = TextEditingController(text: 'http.request.method == "POST"');
+  String selectedPreset = 'HTTP POST Requests';
 
-  void updateFilter(String type) {
-    setState(() {
-      selectedFilterType = type;
-      if (type == 'HTTP POST Requests') {
-        resultingFilter = 'http.request.method == "POST"';
-      } else if (type == 'Specific IP Address') {
-        resultingFilter = 'ip.addr == 192.168.1.100';
-      } else if (type == 'Failed TCP Handshake (SYN-ACK missing)') {
-        resultingFilter = 'tcp.flags.syn == 1 and tcp.flags.ack == 0';
-      } else if (type == 'DNS Queries') {
-        resultingFilter = 'dns.qry.name';
-      }
-    });
-  }
+  final Map<String, String> presets = {
+    'HTTP POST Requests': 'http.request.method == "POST"',
+    'Specific IP Address': 'ip.addr == 192.168.1.100',
+    'Failed TCP Handshake (SYN-ACK missing)': 'tcp.flags.syn == 1 and tcp.flags.ack == 0',
+    'DNS Queries & Lookups': 'dns.qry.name',
+    'SSL/TLS Handshake Traffic': 'tls.handshake.type == 1',
+    'ICMP Ping Packets': 'icmp.type == 8',
+  };
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Wireshark Filter Helper'), backgroundColor: const Color(0xFF1E1E1E)),
+      appBar: AppBar(title: const Text('Smart Wireshark Filter Engine'), backgroundColor: const Color(0xFF131B2E)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DropdownButtonFormField<String>(
-              value: selectedFilterType,
-              dropdownColor: const Color(0xFF1E1E1E),
-              decoration: const InputDecoration(labelText: 'Select Filter Category', border: OutlineInputBorder()),
-              items: ['HTTP POST Requests', 'Specific IP Address', 'Failed TCP Handshake (SYN-ACK missing)', 'DNS Queries']
+              value: selectedPreset,
+              dropdownColor: const Color(0xFF131B2E),
+              decoration: const InputDecoration(labelText: 'Select Prebuilt Scenario', border: OutlineInputBorder()),
+              items: presets.keys
                   .map((val) => DropdownMenuItem(value: val, child: Text(val)))
                   .toList(),
               onChanged: (val) {
-                if (val != null) updateFilter(val);
+                if (val != null) {
+                  setState(() {
+                    selectedPreset = val;
+                    customQueryController.text = presets[val]!;
+                  });
+                }
               },
             ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: customQueryController,
+              decoration: const InputDecoration(
+                labelText: 'Custom / Live Filter Expression',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.filter_list, color: Colors.lightBlueAccent),
+              ),
+            ),
             const SizedBox(height: 20),
-            const Text('Calculated Wireshark Filter:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            const Text('Final Display Filter:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
+                color: const Color(0xFF131B2E),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.lightBlueAccent.withOpacity(0.5)),
               ),
@@ -277,15 +556,15 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      resultingFilter,
+                      customQueryController.text,
                       style: const TextStyle(fontFamily: 'monospace', color: Colors.lightBlueAccent, fontSize: 13),
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy, color: Colors.lightBlueAccent),
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: resultingFilter));
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ الفلتر بنجاح!')));
+                      Clipboard.setData(ClipboardData(text: customQueryController.text));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Display filter copied!')));
                     },
                   ),
                 ],
@@ -298,45 +577,157 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
   }
 }
 
-// 4. مرجع مؤشرات الاختراق والأكواد السريعة
-class CheatSheetScreen extends StatelessWidget {
+// 5. مكتبة مؤشرات الاختراق والبحث مع زر المساعدة
+class CheatSheetScreen extends StatefulWidget {
   const CheatSheetScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> cheatSheetData = [
-      {'title': 'Splunk Top IPs', 'code': 'index=_internal | stats count by clientip | sort -count'},
-      {'title': 'Suricata Basic TCP Alert', 'code': 'alert tcp any any -> any 80 (msg:"HTTP Traffic"; sid:1001; rev:1;)'},
-      {'title': 'Wireshark TCP Reset', 'code': 'tcp.flags.reset == 1'},
-      {'title': 'Nmap Quick SYN Scan', 'code': 'nmap -sS -T4 <Target-IP>'},
-    ];
+  _CheatSheetScreenState createState() => _CheatSheetScreenState();
+}
 
+class _CheatSheetScreenState extends State<CheatSheetScreen> {
+  final TextEditingController searchController = TextEditingController();
+
+  final List<Map<String, String>> allItems = [
+    {
+      'title': 'Splunk Top IPs Analysis',
+      'code': 'index=_internal | stats count by clientip | sort -count',
+      'desc': 'Aggregates and sorts internal log sources to identify top talking IP addresses for anomaly detection.'
+    },
+    {
+      'title': 'Suricata Brute-Force HTTP Login',
+      'code': 'alert tcp any any -> any 80 (msg:"Possible HTTP Brute-Force"; content:"POST"; content:"password="; sid:30001; rev:1;)',
+      'desc': 'Detects repeated HTTP POST requests containing password parameters indicative of credential stuffing or brute-force attacks.'
+    },
+    {
+      'title': 'Wireshark TCP Port Scan Detection',
+      'code': 'tcp.flags.syn == 1 and tcp.flags.ack == 0',
+      'desc': 'Isolates half-open TCP SYN packets which are standard indicators of network reconnaissance and port scanning.'
+    },
+    {
+      'title': 'Ransomware File Extension Indicator',
+      'code': 'alert tcp any any -> any any (msg:"Suspicious Ransomware Extension Request"; content:".locked"; sid:30002; rev:1;)',
+      'desc': 'Spots known ransomware extension patterns transferred or requested across network streams.'
+    },
+    {
+      'title': 'Nmap Stealth SYN Scan',
+      'code': 'nmap -sS -T4 -p- <Target-IP>',
+      'desc': 'Executes a fast multi-threaded TCP SYN port scan without completing the full TCP handshake.'
+    },
+  ];
+
+  List<Map<String, String>> filteredItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    filteredItems = allItems;
+    searchController.addListener(_filterSearch);
+  }
+
+  void _filterSearch() {
+    final query = searchController.text.toLowerCase();
+    setState(() {
+      filteredItems = allItems.where((item) {
+        return item['title']!.toLowerCase().contains(query) ||
+               item['code']!.toLowerCase().contains(query) ||
+               item['desc']!.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void _showHelpDialog(BuildContext context, String title, String description) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF131B2E),
+        title: Text(title, style: const TextStyle(color: Colors.greenAccent)),
+        content: Text(description, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it', style: TextStyle(color: Colors.blueAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('IOCs & Security Cheat Sheet'), backgroundColor: const Color(0xFF1E1E1E)),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: cheatSheetData.length,
-        itemBuilder: (context, index) {
-          final item = cheatSheetData[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent, fontSize: 15)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
-                    child: Text(item['code']!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-                  ),
-                ],
+      appBar: AppBar(title: const Text('IOCs & Threat Intel Hub'), backgroundColor: const Color(0xFF131B2E)),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: searchController,
+              decoration: const InputDecoration(
+                labelText: 'Search rules, ransomware, brute-force...',
+                prefixIcon: Icon(Icons.search, color: Colors.greenAccent),
+                border: OutlineInputBorder(),
               ),
             ),
-          );
-        },
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: filteredItems.length,
+                itemBuilder: (context, index) {
+                  final item = filteredItems[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.between,
+                            children: [
+                              Expanded(
+                                child: Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent, fontSize: 15)),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.help_outline, color: Colors.orangeAccent, size: 20),
+                                onPressed: () => _showHelpDialog(context, item['title']!, item['desc']!),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(item['code']!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white)),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy, size: 18, color: Colors.greenAccent),
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: item['code']!));
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('IOC / Rule copied!')));
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
