@@ -1,5 +1,5 @@
-name: yq_security
-description: "A secure security operations center mobile assistant"
+name: yqsecurity
+description: "Enterprise Security Operations Center Assistant"
 publish_to: "none"
 version: 1.0.0+1
 
