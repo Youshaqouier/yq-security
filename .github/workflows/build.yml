@@ -25,7 +25,7 @@ jobs:
           channel: 'stable'
 
       - name: Create Android files
-        run: flutter create . --platforms=android --org com.yq.security
+        run: flutter create . --platforms=android --org com.yq.security --project-name yq_security
 
       - name: Install dependencies
         run: flutter pub get
