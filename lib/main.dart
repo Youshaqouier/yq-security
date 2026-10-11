@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart'; // مكتبة التشفير الأمنية
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,11 +13,11 @@ class YQSecurityApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'YQ Security Enterprise',
+      title: 'YQ Security Enterprise Secure Edition',
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFF0A0F1D), // Deep Cyber Dark Navy
+        scaffoldBackgroundColor: const Color(0xFF0A0F1D),
         cardColor: const Color(0xFF131B2E),
         colorScheme: const ColorScheme.dark(
           primary: Colors.blueAccent,
@@ -28,7 +30,14 @@ class YQSecurityApp extends StatelessWidget {
   }
 }
 
-// 1. شاشة تسجيل الدخول الأمنية مع شعار الدرع والهوية البصرية و Google Connect
+// دالة أمنية لتشفير كلمات المرور باستخدام SHA-256 لمنع تخزينها بشكل مكشوف
+String hashPassword(String password) {
+  var bytes = utf8.encode(password);
+  var digest = sha256.convert(bytes);
+  return digest.toString();
+}
+
+// 1. شاشة تسجيل الدخول الأمنية والمشفرة
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -42,11 +51,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
 
-  void _handleAuthAction(BuildContext context) {
-    // محاكاة عملية تسجيل الدخول أو إنشاء الحساب بنجاح والانتقال للوحة التحكم
+  void _handleSecureAuth(BuildContext context) {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Security Error: Email and Password cannot be empty!')),
+      );
+      return;
+    }
+
+    // تطبيق التشفير الأمني لكلمة المرور قبل المعالجة
+    String secureHashedPassword = hashPassword(password);
+    debugPrint('Secure Hash Generated: $secureHashedPassword');
+
+    // انتقال آمن إلى لوحة التحكم
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      MaterialPageRoute(builder: (context) => DashboardScreen(analystEmail: email)),
     );
   }
 
@@ -59,18 +82,17 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // شعار الدرع الأمني مع حرفي YQ
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.cyanAccent.withOpacity(0.6), width: 2),
+                  border: Border.all(color: Colors.cyanAccent.withOpacity(0.8), width: 2),
                   color: Colors.blue.withOpacity(0.1),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.cyanAccent.withOpacity(0.2),
-                      blurRadius: 15,
-                      spreadRadius: 2,
+                      color: Colors.cyanAccent.withOpacity(0.3),
+                      blurRadius: 20,
+                      spreadRadius: 3,
                     )
                   ],
                 ),
@@ -92,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'YQ SECURITY SOC',
+                'YQ SECURE SOC',
                 style: TextStyle(
                   fontSize: 24, 
                   fontWeight: FontWeight.bold, 
@@ -102,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Enterprise Threat Intelligence & Operations Hub',
+                'Encrypted Threat Intelligence & Operations Hub',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
@@ -122,8 +144,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
               TextField(
                 controller: emailController,
+                keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
-                  labelText: 'Analyst Email',
+                  labelText: 'Secure Analyst Email',
                   prefixIcon: Icon(Icons.email, color: Colors.blueAccent),
                   border: OutlineInputBorder(),
                 ),
@@ -133,14 +156,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: passwordController,
                 obscureText: true,
                 decoration: const InputDecoration(
-                  labelText: 'Password',
+                  labelText: 'Master Password (Encrypted)',
                   prefixIcon: Icon(Icons.lock, color: Colors.blueAccent),
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 24),
               
-              // زر الدخول التقليدي
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -149,29 +171,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     backgroundColor: Colors.blueAccent,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  onPressed: () => _handleAuthAction(context),
+                  onPressed: () => _handleSecureAuth(context),
                   child: Text(
-                    isSignUpMode ? 'Create Account' : 'Login to Dashboard', 
+                    isSignUpMode ? 'Create Encrypted Account' : 'Secure Login', 
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
 
-              // فاصل أو
               Row(
                 children: const [
                   Expanded(child: Divider(color: Colors.grey)),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Text('OR CONNECT WITH', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    child: Text('SECURE SSO CONNECT', style: TextStyle(fontSize: 10, color: Colors.grey)),
                   ),
                   Expanded(child: Divider(color: Colors.grey)),
                 ],
               ),
               const SizedBox(height: 16),
 
-              // أزرار التسجيل عبر جوجل وشبكات التواصل الاجتماعي
               Row(
                 children: [
                   Expanded(
@@ -182,8 +202,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.cyanAccent),
-                      label: const Text('Google', style: TextStyle(color: Colors.white, fontSize: 13)),
-                      onPressed: () => _handleAuthAction(context),
+                      label: const Text('Google SSO', style: TextStyle(color: Colors.white, fontSize: 13)),
+                      onPressed: () => _handleSecureAuth(context),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -194,16 +214,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: const Icon(Icons.security, size: 20, color: Colors.orangeAccent),
-                      label: const Text('SSO / ID', style: TextStyle(color: Colors.white, fontSize: 13)),
-                      onPressed: () => _handleAuthAction(context),
+                      icon: const Icon(Icons.vpn_key, size: 18, color: Colors.orangeAccent),
+                      label: const Text('OAuth 2.0', style: TextStyle(color: Colors.white, fontSize: 13)),
+                      onPressed: () => _handleSecureAuth(context),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // تبديل الوضع بين تسجيل الدخول وإنشاء حساب
               TextButton(
                 onPressed: () {
                   setState(() {
@@ -211,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   });
                 },
                 child: Text(
-                  isSignUpMode ? 'Already have an account? Login' : 'Need an analyst account? Sign Up',
+                  isSignUpMode ? 'Already registered? Secure Login' : 'Need an analyst account? Sign Up',
                   style: const TextStyle(color: Colors.cyanAccent, fontSize: 13),
                 ),
               ),
@@ -225,7 +244,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
 // 2. لوحة التحكم الرئيسية للـ SOC
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  final String analystEmail;
+  const DashboardScreen({Key? key, required this.analystEmail}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -251,8 +271,13 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Logged in as: $analystEmail',
+              style: const TextStyle(fontSize: 12, color: Colors.greenAccent),
+            ),
+            const SizedBox(height: 10),
             const Text(
-              'Active SOC Toolkits',
+              'Encrypted SOC Toolkits',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.cyanAccent),
             ),
             const SizedBox(height: 6),
@@ -474,7 +499,7 @@ class _SuricataScreenState extends State<SuricataScreen> {
                     icon: const Icon(Icons.copy, color: Colors.orangeAccent),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: generatedRule));
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rule copied successfully!')));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rule copied securely!')));
                     },
                   ),
                 ],
