@@ -1,5 +1,5 @@
 name: yq_security
-description: "A security operations center assistant app."
+description: "A secure security operations center mobile assistant"
 publish_to: "none"
 version: 1.0.0+1
 
@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
