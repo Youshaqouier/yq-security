@@ -28,7 +28,6 @@ jobs:
       run: flutter create . --platforms=android --org com.yqsecurity --project-name yqsecurity
 
     - name: Install dependencies
-      uses: flutter-action/setup-flutter@v2 # أو إبقاء flutter pub get حسب النسخة عندك
       run: flutter pub get
 
     - name: Build APK Release
