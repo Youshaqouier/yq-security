@@ -9,32 +9,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.19.6'
-          channel: 'stable'
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.10.6'
+        channel: 'stable'
 
-      - name: Create Android files
-        run: flutter create . --platforms=android --org com.yq.security --project-name yq_security
+    - name: Create Android Files
+      run: flutter create . --platforms=android --org com.yqsecurity --project-name yqsecurity
 
-      - name: Install dependencies
-        run: flutter pub get
+    - name: Install dependencies
+      uses: flutter-action/setup-flutter@v2 # أو إبقاء flutter pub get حسب النسخة عندك
+      run: flutter pub get
 
-      - name: Build APK Release
-        run: flutter build apk --release
+    - name: Build APK Release
+      run: flutter build apk --release
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-release
+        path: build/app/outputs/flutter-apk/app-release.apk
