@@ -3,6 +3,8 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 void main() {
   runApp(const YQSecurityApp());
@@ -80,22 +82,79 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _saveLoginSession(String name, String email, String image) async {
+  Future<void> _handleAuthAction() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', true);
-    await prefs.setString('analyst_name', name);
-    await prefs.setString('analyst_email', email);
-    await prefs.setString('analyst_image', image);
-  }
+    String email = emailController.text.trim();
+    String pass = passwordController.text;
 
-  void _handleLogin({String name = 'SOC Analyst', String email = 'analyst@yqsecurity.com', String image = ''}) async {
-    if (passwordController.text.isNotEmpty) {
-      String secureHash = hashSecurePassword(passwordController.text);
-      debugPrint('Encrypted Hash: $secureHash');
+    if (email.isEmpty || pass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid email and password')),
+      );
+      return;
     }
 
-    await _saveLoginSession(name, email, image);
+    if (isSignUpMode) {
+      String hashedPassword = hashSecurePassword(pass);
+      await prefs.setString('reg_email', email);
+      await prefs.setString('reg_pass', hashedPassword);
+      await prefs.setString('analyst_name', nameController.text.isNotEmpty ? nameController.text : 'SOC Analyst');
+      await prefs.setString('analyst_email', email);
+      await prefs.setBool('is_logged_in', true);
 
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DashboardScreen(
+              analystEmail: email,
+              analystName: nameController.text.isNotEmpty ? nameController.text : 'SOC Analyst',
+              initialImage: '',
+            ),
+          ),
+        );
+      }
+    } else {
+      String? savedEmail = prefs.getString('reg_email');
+      String? savedPass = prefs.getString('reg_pass');
+      String hashedInputPass = hashSecurePassword(pass);
+
+      if (savedEmail == null || savedPass == null) {
+        if (email == 'analyst@yqsecurity.com' && hashedInputPass == hashSecurePassword('admin123')) {
+          await prefs.setBool('is_logged_in', true);
+          _navigateToDashboard('SOC Analyst', email);
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No account found. Please Sign Up first.')),
+        );
+        return;
+      }
+
+      if (email == savedEmail && hashedInputPass == savedPass) {
+        await prefs.setBool('is_logged_in', true);
+        String name = prefs.getString('analyst_name') ?? 'SOC Analyst';
+        _navigateToDashboard(name, email);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid Email or Password! Access Denied.')),
+        );
+      }
+    }
+  }
+
+  void _handleGoogleLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    String gEmail = 'analyst.google@gmail.com';
+    await prefs.setBool('is_logged_in', true);
+    await prefs.setString('analyst_email', gEmail);
+    await prefs.setString('analyst_name', 'Google Verified Analyst');
+    _navigateToDashboard('Google Verified Analyst', gEmail);
+  }
+
+  void _navigateToDashboard(String name, String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    String image = prefs.getString('analyst_image') ?? '';
     if (mounted) {
       Navigator.pushReplacement(
         context,
@@ -165,7 +224,6 @@ class _LoginScreenState extends State<LoginScreen> {
               if (isSignUpMode) ...[
                 TextField(
                   controller: nameController,
-                  enableInteractiveSelection: true,
                   decoration: const InputDecoration(
                     labelText: 'Full Name / Analyst ID',
                     prefixIcon: Icon(Icons.person, color: Colors.cyanAccent),
@@ -178,7 +236,6 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
-                enableInteractiveSelection: true,
                 decoration: const InputDecoration(
                   labelText: 'Secure Analyst Email',
                   prefixIcon: Icon(Icons.email, color: Colors.blueAccent),
@@ -189,7 +246,6 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: passwordController,
                 obscureText: _obscurePassword,
-                enableInteractiveSelection: true,
                 decoration: InputDecoration(
                   labelText: 'Master Password (Encrypted)',
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.blueAccent),
@@ -207,20 +263,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-                  onPressed: () {
-                    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter email and password')),
-                      );
-                      return;
-                    }
-                    _handleLogin(
-                      name: nameController.text.isNotEmpty ? nameController.text : 'SOC Analyst',
-                      email: emailController.text,
-                    );
-                  },
+                  onPressed: _handleAuthAction,
                   child: Text(
-                    isSignUpMode ? 'Create Encrypted Account' : 'Secure Login',
+                    isSignUpMode ? 'Register Encrypted Account' : 'Secure Login',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -237,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.cyanAccent),
                   label: const Text('Continue with Google', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                  onPressed: () => _handleLogin(name: 'Google Verified Analyst', email: 'analyst.secure@gmail.com'),
+                  onPressed: _handleGoogleLogin,
                 ),
               ),
               const SizedBox(height: 20),
@@ -245,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextButton(
                 onPressed: () => setState(() => isSignUpMode = !isSignUpMode),
                 child: Text(
-                  isSignUpMode ? 'Already registered? Secure Login' : 'Need an analyst account? Sign Up',
+                  isSignUpMode ? 'Already have an account? Secure Login' : 'Need an analyst account? Sign Up',
                   style: const TextStyle(color: Colors.cyanAccent, fontSize: 13),
                 ),
               ),
@@ -276,7 +321,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late String currentName;
   late String currentEmail;
-  late String profileImageUrl;
+  late String profileImagePath;
   bool isArabic = false;
 
   @override
@@ -284,12 +329,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     currentName = widget.analystName;
     currentEmail = widget.analystEmail;
-    profileImageUrl = widget.initialImage;
+    profileImagePath = widget.initialImage;
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        profileImagePath = image.path;
+      });
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('analyst_image', profileImagePath);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isArabic ? 'تم تحديث الصورة الشخصية بنجاح!' : 'Profile image updated successfully!')),
+        );
+      }
+    }
   }
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await prefs.setBool('is_logged_in', false);
     if (mounted) {
       Navigator.pushReplacement(
         context,
@@ -302,7 +364,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final TextEditingController nameEditController = TextEditingController(text: currentName);
     final TextEditingController emailEditController = TextEditingController(text: currentEmail);
     final TextEditingController passEditController = TextEditingController();
-    final TextEditingController imageEditController = TextEditingController(text: profileImageUrl);
 
     showModalBottomSheet(
       context: context,
@@ -336,11 +397,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 obscureText: true,
                 decoration: InputDecoration(labelText: isArabic ? 'كلمة المرور الجديدة' : 'New Master Password', border: const OutlineInputBorder()),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: imageEditController,
-                decoration: InputDecoration(labelText: isArabic ? 'رابط صورة البروفايل (Avatar URL)' : 'Profile Image URL', border: const OutlineInputBorder()),
-              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -350,12 +406,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     setState(() {
                       currentName = nameEditController.text;
                       currentEmail = emailEditController.text;
-                      profileImageUrl = imageEditController.text;
                     });
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.setString('analyst_name', currentName);
                     await prefs.setString('analyst_email', currentEmail);
-                    await prefs.setString('analyst_image', profileImageUrl);
+                    if (passEditController.text.isNotEmpty) {
+                      await prefs.setString('reg_pass', hashSecurePassword(passEditController.text));
+                    }
                     
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -396,10 +453,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               decoration: const BoxDecoration(color: Color(0xFF131B2E)),
               accountName: Text(currentName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               accountEmail: Text(currentEmail, style: const TextStyle(color: Colors.cyanAccent)),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.blueAccent,
-                backgroundImage: profileImageUrl.isNotEmpty ? NetworkImage(profileImageUrl) : null,
-                child: profileImageUrl.isEmpty ? const Icon(Icons.person, size: 40, color: Colors.white) : null,
+              currentAccountPicture: GestureDetector(
+                onTap: _pickImageFromGallery,
+                child: CircleAvatar(
+                  backgroundColor: Colors.blueAccent,
+                  backgroundImage: profileImagePath.isNotEmpty 
+                      ? (profileImagePath.startsWith('http') ? NetworkImage(profileImagePath) : FileImage(File(profileImagePath)) as ImageProvider)
+                      : null,
+                  child: profileImagePath.isEmpty ? const Icon(Icons.camera_alt, size: 30, color: Colors.white) : null,
+                ),
               ),
             ),
             ListTile(
@@ -449,9 +511,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: ListView(
                 children: [
-                  _buildMenuCard(context, isArabic ? 'مولد قواعد سوريكاتا' : 'Advanced Suricata Rule Builder', isArabic ? 'تخصيص البروتوكولات والشروط المتعددة' : 'Custom IPs, Protocols, Content & Signatures', Icons.security, Colors.orangeAccent, SuricataScreen(isArabic: isArabic)),
+                  _buildMenuCard(context, isArabic ? 'مولد قواعد سوريكاتا' : 'Advanced Suricata Rule Builder', isArabic ? 'التحكم الكامل بالبروتوكولات والمنافذ وعناوين IP' : 'Full control over Protocols, IPs, Ports & Signatures', Icons.security, Colors.orangeAccent, SuricataScreen(isArabic: isArabic)),
                   const SizedBox(height: 12),
-                  _buildMenuCard(context, isArabic ? 'محرك وايرشاك الذكي' : 'Dynamic Wireshark Filter Engine', isArabic ? 'فلاتر العرض والالتقاط مع اقتراحات ذكية' : 'Capture & Display filters with auto-complete', Icons.network_check, Colors.lightBlueAccent, WiresharkScreen(isArabic: isArabic)),
+                  _buildMenuCard(context, isArabic ? 'محرك فلاتر وايرشاك الذكي' : 'Dynamic Wireshark Filter Engine', isArabic ? 'جميع فلاتر العرض والالتقاط مع بحث فوري' : 'All Display & Capture filters with instant search', Icons.network_check, Colors.lightBlueAccent, WiresharkSelectionScreen(isArabic: isArabic)),
                   const SizedBox(height: 12),
                   _buildMenuCard(context, isArabic ? 'مولد استعلامات Splunk SPL' : 'Splunk SPL Query Generator', isArabic ? 'قوالب جاهزة ومتغيرات مرنة لبحث السجلات' : 'Enterprise security log queries with templates', Icons.analytics, Colors.purpleAccent, SplunkScreen(isArabic: isArabic)),
                   const SizedBox(height: 12),
@@ -481,7 +543,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// شاشة دليل المستخدم (User Guide) الداعمة للغتين
 class UserGuideScreen extends StatelessWidget {
   final bool isArabic;
   const UserGuideScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -498,27 +559,27 @@ class UserGuideScreen extends StatelessWidget {
         children: [
           _buildGuideSection(
             isArabic ? '1. إدارة الحساب والأمان' : '1. Account & Security',
-            isArabic ? 'يسمح لك التطبيق بتعديل بيانات حسابك الشخصي، تغيير كلمة المرور المشفرة بـ SHA-256، رفع صورة بروفايل عبر رابط خارجي، والتحكم باللغة بين العربية والإنجليزية بسلاسة.' : 'Allows you to manage your profile, change your SHA-256 encrypted password, upload a profile avatar via link, and toggle language between Arabic and English seamlessly.',
+            isArabic ? 'تسجيل حساب حقيقي وتأمين كلمة المرور بـ SHA-256، والنقر على دائرة البروفايل لاختيار صورة من ذاكرة الهاتف.' : 'Register secure accounts, secure passwords via SHA-256, and tap the profile avatar to pick images from storage.',
           ),
           const SizedBox(height: 12),
           _buildGuideSection(
             isArabic ? '2. مولد قواعد Suricata' : '2. Suricata Rule Builder',
-            isArabic ? 'أداة مخصصة لصياغة وتوليد قواعد الكشف عن التهديدات. تتيح لك إضافة شروط اختيارية متعددة مثل الـ Content الإضافي والـ Uricontent و Flags، وتتجاهل الحقول الفارغة تلقائياً لتوليد قاعدة نظيفة.' : 'Designed to craft threat detection rules. Allows multiple optional conditions like extra content, uricontent, and flags, automatically ignoring empty fields for clean rules.',
+            isArabic ? 'تحكم كامل بالعمليات، البروتوكولات، ومنافذ وعناوين IP للمصدر والهدف مع الشروط الإضافية.' : 'Full control over actions, protocols, source/destination IPs and ports with extra conditions.',
           ),
           const SizedBox(height: 12),
           _buildGuideSection(
             isArabic ? '3. محرك فلاتر Wireshark' : '3. Wireshark Filter Engine',
-            isArabic ? 'يساعدك على اختيار نوع الفلتر (Display أو Capture) مع تقديم اقتراحات ذكية (Auto-Complete) أثناء الكتابة لتسهيل استخراج حزم البيانات بدقة.' : 'Helps select filter types (Display or Capture) with auto-complete suggestions while typing to accurately filter packet captures.',
+            isArabic ? 'اختيار فلاتر العرض أو الالتقاط للوصول إلى قاعدة بيانات شاملة مع بحث فوري.' : 'Choose display or capture filters accessing a comprehensive database with instant search.',
           ),
           const SizedBox(height: 12),
           _buildGuideSection(
             isArabic ? '4. مولد استعلامات Splunk SPL' : '4. Splunk SPL Query Generator',
-            isArabic ? 'يعتمد على قوالب جاهزة وثابتة لأوامر البحث الإحصائي، حيث يقتصر دورك على تعبئة المتغيرات المرنة لتوليد أقوى استعلامات تحليل السجلات.' : 'Relies on pre-built templates for statistical search queries, allowing you to fill flexible variables to generate robust log analysis queries.',
+            isArabic ? 'قوالب جاهزة ومتغيرات مرنة لاستخراج الإحصائيات وتحليل السجلات الأمنية.' : 'Pre-built templates and flexible variables for security log analysis.',
           ),
           const SizedBox(height: 12),
           _buildGuideSection(
             isArabic ? '5. استخبارات مؤشرات الاختراق (IOCs Hub)' : '5. IOCs & Threat Intelligence Hub',
-            isArabic ? 'محرك بحث استخباراتي يربط الهجوم الواحد بأدوات الكشف المقابلة (Suricata، Wireshark، Splunk)، مع أزرار شرح تفصيلية مترجمة حسب لغة التطبيق.' : 'An intelligence search engine linking attacks to corresponding detection tools (Suricata, Wireshark, Splunk), with localized help explanations.',
+            isArabic ? 'محرك بحث استخباراتي شامل لجميع هجمات الأمن السيبراني؛ تظهر النتائج حصراً عند البحث عن الهجمة.' : 'Comprehensive intelligence search engine for all cyber attacks; results appear strictly upon searching.',
           ),
         ],
       ),
@@ -544,7 +605,6 @@ class UserGuideScreen extends StatelessWidget {
   }
 }
 
-// شاشة Suricata المحدثة بالشروط الاختيارية المتعددة
 class SuricataScreen extends StatefulWidget {
   final bool isArabic;
   const SuricataScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -554,6 +614,11 @@ class SuricataScreen extends StatefulWidget {
 class _SuricataScreenState extends State<SuricataScreen> {
   String selectedAction = 'alert';
   String selectedProtocol = 'tcp';
+  final TextEditingController srcIpController = TextEditingController(text: 'any');
+  final TextEditingController srcPortController = TextEditingController(text: 'any');
+  final TextEditingController dstIpController = TextEditingController(text: 'any');
+  final TextEditingController dstPortController = TextEditingController(text: '80');
+  
   final TextEditingController msgController = TextEditingController(text: 'Suspicious Web Attack');
   final TextEditingController contentController = TextEditingController(text: '/admin/shell.php');
   final TextEditingController extraContentController = TextEditingController();
@@ -580,8 +645,13 @@ class _SuricataScreenState extends State<SuricataScreen> {
       extra += '; flags:${flagsController.text}';
     }
 
+    String sIp = srcIpController.text.isEmpty ? 'any' : srcIpController.text;
+    String sPort = srcPortController.text.isEmpty ? 'any' : srcPortController.text;
+    String dIp = dstIpController.text.isEmpty ? 'any' : dstIpController.text;
+    String dPort = dstPortController.text.isEmpty ? 'any' : dstPortController.text;
+
     setState(() {
-      generatedRule = '$selectedAction $selectedProtocol any any -> any 80 (msg:"${msgController.text}"; content:"${contentController.text}"$extra; sid:${sidController.text}; rev:1;)';
+      generatedRule = '$selectedAction $selectedProtocol $sIp $sPort -> $dIp $dPort (msg:"${msgController.text}"; content:"${contentController.text}"$extra; sid:${sidController.text}; rev:1;)';
     });
   }
 
@@ -594,6 +664,46 @@ class _SuricataScreenState extends State<SuricataScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedAction,
+                    dropdownColor: const Color(0xFF131B2E),
+                    decoration: InputDecoration(labelText: ar ? 'العملية (Action)' : 'Action'),
+                    items: ['alert', 'drop', 'pass', 'log'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                    onChanged: (val) { setState(() { selectedAction = val!; updateRule(); }); },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedProtocol,
+                    dropdownColor: const Color(0xFF131B2E),
+                    decoration: InputDecoration(labelText: ar ? 'البروتوكول' : 'Protocol'),
+                    items: ['tcp', 'udp', 'icmp', 'http', 'tls'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                    onChanged: (val) { setState(() { selectedProtocol = val!; updateRule(); }); },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: TextField(controller: srcIpController, decoration: InputDecoration(labelText: ar ? 'IP المصدر' : 'Source IP'), onChanged: (_) => updateRule())),
+                const SizedBox(width: 8),
+                Expanded(child: TextField(controller: srcPortController, decoration: InputDecoration(labelText: ar ? 'منفذ المصدر' : 'Source Port'), onChanged: (_) => updateRule())),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: TextField(controller: dstIpController, decoration: InputDecoration(labelText: ar ? 'IP الهدف' : 'Dest IP'), onChanged: (_) => updateRule())),
+                const SizedBox(width: 8),
+                Expanded(child: TextField(controller: dstPortController, decoration: InputDecoration(labelText: ar ? 'منفذ الهدف' : 'Dest Port'), onChanged: (_) => updateRule())),
+              ],
+            ),
+            const SizedBox(height: 12),
             TextField(controller: msgController, decoration: InputDecoration(labelText: ar ? 'رسالة التنبيه' : 'Alert Message'), onChanged: (_) => updateRule()),
             const SizedBox(height: 12),
             TextField(controller: contentController, decoration: InputDecoration(labelText: ar ? 'محتوى التوقيع الأساسي' : 'Primary Content Pattern'), onChanged: (_) => updateRule()),
@@ -629,37 +739,111 @@ class _SuricataScreenState extends State<SuricataScreen> {
   }
 }
 
-// شاشة وايرشاك المحدثة بنظام الاقتراحات الذكية (Auto-complete)
-class WiresharkScreen extends StatefulWidget {
+class WiresharkSelectionScreen extends StatelessWidget {
   final bool isArabic;
-  const WiresharkScreen({Key? key, required this.isArabic}) : super(key: key);
+  const WiresharkSelectionScreen({Key? key, required this.isArabic}) : super(key: key);
+
   @override
-  _WiresharkScreenState createState() => _WiresharkScreenState();
+  Widget build(BuildContext context) {
+    bool ar = isArabic;
+    return Scaffold(
+      appBar: AppBar(title: Text(ar ? 'محرك فلاتر وايرشاك' : 'Wireshark Engine'), backgroundColor: const Color(0xFF131B2E)),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(ar ? 'اختر نوع الفلتر للبدء بالبحث والاستكشاف:' : 'Select filter type to begin search & exploration:', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, color: Colors.cyanAccent)),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                icon: const Icon(Icons.visibility, color: Colors.white),
+                label: Text(ar ? 'فلاتر العرض (Display Filters)' : 'Display Filters', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => WiresharkSearchScreen(filterType: 'Display', isArabic: ar)));
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
+                icon: const Icon(Icons.filter_alt, color: Colors.white),
+                label: Text(ar ? 'فلاتر الالتقاط (Capture Filters)' : 'Capture Filters', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => WiresharkSearchScreen(filterType: 'Capture', isArabic: ar)));
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
-class _WiresharkScreenState extends State<WiresharkScreen> {
-  String filterType = 'Display Filter';
+
+class WiresharkSearchScreen extends StatefulWidget {
+  final String filterType;
+  final bool isArabic;
+  const WiresharkSearchScreen({Key? key, required this.filterType, required this.isArabic}) : super(key: key);
+
+  @override
+  _WiresharkSearchScreenState createState() => _WiresharkSearchScreenState();
+}
+
+class _WiresharkSearchScreenState extends State<WiresharkSearchScreen> {
   final TextEditingController searchController = TextEditingController();
-  
-  final List<String> suggestions = [
+
+  final List<String> displayFilters = [
     'http.request.method == "POST"',
+    'http.request.method == "GET"',
     'ip.addr == 192.168.1.100',
+    'ip.src == 10.0.0.1',
+    'ip.dst == 8.8.8.8',
     'tcp.flags.syn == 1',
+    'tcp.flags.reset == 1',
+    'tcp.port == 443',
+    'udp.port == 53',
     'dns.qry.name',
     'ssl.handshake.type == 1',
-    'port 80 or port 443',
-    'host 10.0.0.5'
+    'http.uri contains "admin"',
+    'arp.opcode == 1',
+    'icmp.type == 8',
+    'ftp.request.command',
+    'smb.cmd == 0xa2',
+    'dhcp.id'
   ];
 
-  List<String> currentSuggestions = [];
+  final List<String> captureFilters = [
+    'host 192.168.1.1',
+    'src net 192.168.0.0/16',
+    'dst port 80',
+    'tcp port 443',
+    'udp port 53',
+    'icmp',
+    'broadcast',
+    'multicast',
+    'not port 22',
+    'tcp[tcpflags] & (tcp-syn) != 0'
+  ];
+
+  late List<String> allFilters;
+  List<String> currentFilters = [];
 
   @override
   void initState() {
     super.initState();
-    currentSuggestions = suggestions;
+    allFilters = widget.filterType == 'Display' ? displayFilters : captureFilters;
+    currentFilters = allFilters;
     searchController.addListener(() {
       final q = searchController.text.toLowerCase();
       setState(() {
-        currentSuggestions = suggestions.where((item) => item.toLowerCase().contains(q)).toList();
+        currentFilters = allFilters.where((item) => item.toLowerCase().contains(q)).toList();
       });
     });
   }
@@ -667,48 +851,33 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
   @override
   Widget build(BuildContext context) {
     bool ar = widget.isArabic;
+    String title = widget.filterType == 'Display' 
+        ? (ar ? 'فلاتر العرض (Display Filters)' : 'Display Filters Hub')
+        : (ar ? 'فلاتر الالتقاط (Capture Filters)' : 'Capture Filters Hub');
+
     return Scaffold(
-      appBar: AppBar(title: Text(ar ? 'محرك وايرشاك الذكي' : 'Wireshark Engine'), backgroundColor: const Color(0xFF131B2E)),
+      appBar: AppBar(title: Text(title), backgroundColor: const Color(0xFF131B2E)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: Text(ar ? 'فلاتر العرض (Display)' : 'Display Filter'),
-                    selected: filterType == 'Display Filter',
-                    onSelected: (val) => setState(() => filterType = 'Display Filter'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ChoiceChip(
-                    label: Text(ar ? 'فلاتر الالتقاط (Capture)' : 'Capture Filter'),
-                    selected: filterType == 'Capture Filter',
-                    onSelected: (val) => setState(() => filterType = 'Capture Filter'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
             TextField(
               controller: searchController,
               decoration: InputDecoration(
-                labelText: ar ? 'ابحث عن فلتر أو اكتبه...' : 'Search or type filter...',
+                labelText: ar ? 'ابحث عن أي فلتر شبكي (اكتب أي حرف)...' : 'Search any filter (type any letter)...',
                 prefixIcon: const Icon(Icons.search, color: Colors.cyanAccent),
                 border: const OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Expanded(
               child: ListView.builder(
-                itemCount: currentSuggestions.length,
+                itemCount: currentFilters.length,
                 itemBuilder: (context, index) {
-                  final item = currentSuggestions[index];
+                  final item = currentFilters[index];
                   return Card(
                     color: const Color(0xFF131B2E),
+                    margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       title: Text(item, style: const TextStyle(fontFamily: 'monospace', color: Colors.greenAccent, fontSize: 13)),
                       trailing: IconButton(
@@ -733,7 +902,6 @@ class _WiresharkScreenState extends State<WiresharkScreen> {
   }
 }
 
-// شاشة Splunk المحدثة بالقوالب الجاهزة والمتغيرات المرنة
 class SplunkScreen extends StatefulWidget {
   final bool isArabic;
   const SplunkScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -820,7 +988,7 @@ class _SplunkScreenState extends State<SplunkScreen> {
   }
 }
 
-// شاشة مؤشرات الاختراق IOCs Hub مع الشرح المترجم ومحرك البحث الاستخباراتي
+// مكتبة مؤشرات الاختراق IOCs Hub الشاملة والتي تظهر حصراً عند البحث
 class CheatSheetScreen extends StatefulWidget {
   final bool isArabic;
   const CheatSheetScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -830,24 +998,48 @@ class CheatSheetScreen extends StatefulWidget {
 class _CheatSheetScreenState extends State<CheatSheetScreen> {
   final TextEditingController searchController = TextEditingController();
   
-  final List<Map<String, String>> attacks = [
+  final List<Map<String, String>> allAttacks = [
     {
-      'title': 'Ransomware .locked', 
-      'code': 'content:".locked";', 
+      'title': 'Ransomware .locked Detection', 
+      'code': 'alert tcp any any -> any any (msg:"Ransomware .locked Extension"; content:".locked"; sid:30001; rev:1;)', 
       'descAr': 'يكتشف هذا المؤشر ملفات الفدية المشفرة ذات الامتداد الخبيث .locked عبر الشبكة.',
       'descEn': 'Detects malicious ransomware file extensions (.locked) across network traffic.'
     },
     {
-      'title': 'SQL Injection OR 1=1', 
-      'code': 'content:"OR 1=1";', 
-      'descAr': 'يكتشف محاولات تجاوز صفحات تسجيل الدخول عبر حقن قواعد البيانات SQL.',
+      'title': 'SQL Injection Bypass (OR 1=1)', 
+      'code': 'alert tcp any any -> any 80 (msg:"SQL Injection Attack"; content:"OR 1=1"; sid:30002; rev:1;)', 
+      'descAr': 'يكتشف محاولات تجاوز صفحات تسجيل الدخول وبوابات المصادقة عبر حقن SQL.',
       'descEn': 'Detects login authentication bypass attempts via SQL injection techniques.'
     },
     {
       'title': 'SSH Brute Force Attack', 
-      'code': 'threshold:type threshold, track by_src, count 5, seconds 60;', 
+      'code': 'alert tcp any any -> any 22 (msg:"SSH Brute Force"; threshold:type threshold, track by_src, count 5, seconds 60; sid:30003; rev:1;)', 
       'descAr': 'يرصد محاولات تخمين كلمات المرور المتكررة (Brute Force) على خدمة الـ SSH.',
       'descEn': 'Monitors repeated authentication failure attempts targeting SSH services.'
+    },
+    {
+      'title': 'Cross-Site Scripting (XSS Attack)', 
+      'code': 'alert tcp any any -> any 80 (msg:"XSS Injection Attempt"; content:"<script>"; sid:30004; rev:1;)', 
+      'descAr': 'يكتشف محاولات حقن سكربتات خبيثة تنفيذية عبر المتصفح (XSS).',
+      'descEn': 'Detects malicious script injection attempts targeting web applications.'
+    },
+    {
+      'title': 'Remote Code Execution (RCE / cmd.exe)', 
+      'code': 'alert tcp any any -> any 80 (msg:"RCE Web Shell Execution"; content:"cmd.exe"; sid:30005; rev:1;)', 
+      'descAr': 'يكتشف محاولات تشغيل أوامر النظام عن بعد عبر ثغرات تنفيذ الأكواد (RCE).',
+      'descEn': 'Detects remote system command execution attempts via vulnerable web interfaces.'
+    },
+    {
+      'title': 'DNS Tunneling Suspicious Query', 
+      'code': 'alert udp any any -> any 53 (msg: "DNS Tunneling Activity"; content: "|01 00 00 01 00 00 00 00|"; sid:30006; rev:1;)', 
+      'descAr': 'يرصد عمليات تسريب البيانات أو الاتصالات المخفية عبر بروتوكول أسماء النطاقات DNS.',
+      'descEn': 'Monitors covert data exfiltration and tunneling through DNS queries.'
+    },
+    {
+      'title': 'DDoS SYN Flood Attack', 
+      'code': 'alert tcp any any -> any any (msg:"SYN Flood DDoS Attack"; flags:S; threshold:type both, track by_dst, count 100, seconds 10; sid:30007; rev:1;)', 
+      'descAr': 'يكتشف هجمات حجب الخدمة الموزعة عبر إغراق الهدف بحزم SYN الوهمية.',
+      'descEn': 'Detects Distributed Denial of Service SYN flood flooding targeting infrastructure.'
     },
   ];
 
@@ -856,15 +1048,20 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
   @override
   void initState() {
     super.initState();
-    filteredAttacks = attacks;
+    filteredAttacks = []; // تبدأ فارغة تماماً ولا يظهر أي هجوم إلا بالبحث
     searchController.addListener(() {
-      final q = searchController.text.toLowerCase();
+      final q = searchController.text.trim().toLowerCase();
       setState(() {
-        filteredAttacks = attacks.where((item) => 
-          item['title']!.toLowerCase().contains(q) || 
-          item['descAr']!.toLowerCase().contains(q) ||
-          item['descEn']!.toLowerCase().contains(q)
-        ).toList();
+        if (q.isEmpty) {
+          filteredAttacks = [];
+        } else {
+          filteredAttacks = allAttacks.where((item) => 
+            item['title']!.toLowerCase().contains(q) || 
+            item['code']!.toLowerCase().contains(q) ||
+            item['descAr']!.toLowerCase().contains(q) ||
+            item['descEn']!.toLowerCase().contains(q)
+          ).toList();
+        }
       });
     });
   }
@@ -893,59 +1090,67 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
             TextField(
               controller: searchController, 
               decoration: InputDecoration(
-                labelText: ar ? 'ابحث عن الهجمات أو الثغرات...' : 'Search attacks, ransomware, brute-force...',
+                labelText: ar ? 'ابحث عن الهجمة أو الثغرة (مثال: Ransomware, SQL)...' : 'Search attacks (e.g., Ransomware, SQL, XSS)...',
                 prefixIcon: const Icon(Icons.search, color: Colors.greenAccent),
                 border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView.builder(
-                itemCount: filteredAttacks.length,
-                itemBuilder: (context, index) {
-                  final att = filteredAttacks[index];
-                  String description = ar ? att['descAr']! : att['descEn']!;
-                  return Card(
-                    color: const Color(0xFF131B2E),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(child: Text(att['title']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent, fontSize: 15))),
-                              IconButton(
-                                icon: const Icon(Icons.help_outline, color: Colors.orangeAccent), 
-                                onPressed: () => _showHelpDialog(context, att['title']!, description),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
-                            child: Row(
+              child: filteredAttacks.isEmpty 
+                  ? Center(
+                      child: Text(
+                        ar ? 'أدخل اسم الهجمة في خانة البحث أعلاه لعرض المؤشرات...' : 'Enter an attack name above to view threat intelligence indicators...',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filteredAttacks.length,
+                      itemBuilder: (context, index) {
+                        final att = filteredAttacks[index];
+                        String description = ar ? att['descAr']! : att['descEn']!;
+                        return Card(
+                          color: const Color(0xFF131B2E),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(child: Text(att['code']!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white))),
-                                IconButton(
-                                  icon: const Icon(Icons.copy, size: 18, color: Colors.greenAccent), 
-                                  onPressed: () {
-                                    Clipboard.setData(ClipboardData(text: att['code']!));
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم النسخ!' : 'Copied!')));
-                                  },
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(child: Text(att['title']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent, fontSize: 15))),
+                                    IconButton(
+                                      icon: const Icon(Icons.help_outline, color: Colors.orangeAccent), 
+                                      onPressed: () => _showHelpDialog(context, att['title']!, description),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
+                                  child: Row(
+                                    children: [
+                                      Expanded(child: Text(att['code']!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white))),
+                                      IconButton(
+                                        icon: const Icon(Icons.copy, size: 18, color: Colors.greenAccent), 
+                                        onPressed: () {
+                                          Clipboard.setData(ClipboardData(text: att['code']!));
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم النسخ!' : 'Copied!')));
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
