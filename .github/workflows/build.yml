@@ -29,8 +29,11 @@ jobs:
     - name: Install Dependencies
       run: flutter pub get
 
-    - name: Generate App Icon
-      run: flutter pub run flutter_launcher_icons:main
-
     - name: Build APK
       run: flutter build apk --release
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
