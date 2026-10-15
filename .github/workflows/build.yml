@@ -29,6 +29,9 @@ jobs:
     - name: Install Dependencies
       run: flutter pub get
 
+    - name: Fix Android Project Structure
+      run: flutter create . --platforms=android
+
     - name: Build APK
       run: flutter build apk --release
 
