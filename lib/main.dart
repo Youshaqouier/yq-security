@@ -143,13 +143,64 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _handleGoogleLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    String gEmail = 'analyst.google@gmail.com';
-    await prefs.setBool('is_logged_in', true);
-    await prefs.setString('analyst_email', gEmail);
-    await prefs.setString('analyst_name', 'Google Verified Analyst');
-    _navigateToDashboard('Google Verified Analyst', gEmail);
+  // نافذة تفاعلية لاختيار حساب غوغل تماماً كمنصة كورسيرا والمنصات العالمية
+  void _showGoogleAccountPicker() {
+    final List<String> deviceGoogleAccounts = [
+      'yq.security.analyst@gmail.com',
+      'soc.operations.lead@gmail.com',
+      'threat.intelligence.pro@gmail.com'
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF131B2E),
+        title: const Row(
+          children: [
+            Icon(Icons.g_mobiledata, color: Colors.cyanAccent, size: 36),
+            SizedBox(width: 8),
+            Text('Sign in with Google', style: TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Choose an account to continue to yqsecurity:', style: TextStyle(fontSize: 13, color: Colors.grey)),
+              const SizedBox(height: 12),
+              ...deviceGoogleAccounts.map((accEmail) => Card(
+                color: const Color(0xFF0A0F1D),
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.blueAccent,
+                    child: Icon(Icons.person, color: Colors.white),
+                  ),
+                  title: Text(accEmail, style: const TextStyle(color: Colors.cyanAccent, fontSize: 13)),
+                  subtitle: const Text('Google Verified Account', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('is_logged_in', true);
+                    await prefs.setString('analyst_email', accEmail);
+                    await prefs.setString('analyst_name', 'Google Verified Analyst');
+                    _navigateToDashboard('Google Verified Analyst', accEmail);
+                  },
+                ),
+              )).toList(),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToDashboard(String name, String email) async {
@@ -282,7 +333,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.cyanAccent),
                   label: const Text('Continue with Google', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                  onPressed: _handleGoogleLogin,
+                  onPressed: _showGoogleAccountPicker,
                 ),
               ),
               const SizedBox(height: 20),
@@ -579,7 +630,7 @@ class UserGuideScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _buildGuideSection(
             isArabic ? '5. استخبارات مؤشرات الاختراق (IOCs Hub)' : '5. IOCs & Threat Intelligence Hub',
-            isArabic ? 'محرك بحث استخباراتي شامل لجميع هجمات الأمن السيبراني؛ تظهر النتائج حصراً عند البحث عن الهجمة.' : 'Comprehensive intelligence search engine for all cyber attacks; results appear strictly upon searching.',
+            isArabic ? 'محرك بحث استخباراتي شامل لجميع هجمات الأمن السيبراني؛ تظهر النتائج حصراً عند البحث.' : 'Comprehensive intelligence search engine for cyber attacks; results appear upon search.',
           ),
         ],
       ),
@@ -988,7 +1039,6 @@ class _SplunkScreenState extends State<SplunkScreen> {
   }
 }
 
-// مكتبة مؤشرات الاختراق IOCs Hub الشاملة والتي تظهر حصراً عند البحث
 class CheatSheetScreen extends StatefulWidget {
   final bool isArabic;
   const CheatSheetScreen({Key? key, required this.isArabic}) : super(key: key);
@@ -1048,7 +1098,7 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
   @override
   void initState() {
     super.initState();
-    filteredAttacks = []; // تبدأ فارغة تماماً ولا يظهر أي هجوم إلا بالبحث
+    filteredAttacks = [];
     searchController.addListener(() {
       final q = searchController.text.trim().toLowerCase();
       setState(() {
