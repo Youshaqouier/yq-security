@@ -143,66 +143,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // نافذة تفاعلية لاختيار حساب غوغل تماماً كمنصة كورسيرا والمنصات العالمية
-  void _showGoogleAccountPicker() {
-    final List<String> deviceGoogleAccounts = [
-      'yq.security.analyst@gmail.com',
-      'soc.operations.lead@gmail.com',
-      'threat.intelligence.pro@gmail.com'
-    ];
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF131B2E),
-        title: const Row(
-          children: [
-            Icon(Icons.g_mobiledata, color: Colors.cyanAccent, size: 36),
-            SizedBox(width: 8),
-            Text('Sign in with Google', style: TextStyle(color: Colors.white, fontSize: 18)),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Choose an account to continue to yqsecurity:', style: TextStyle(fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 12),
-              ...deviceGoogleAccounts.map((accEmail) => Card(
-                color: const Color(0xFF0A0F1D),
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Colors.blueAccent,
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-                  title: Text(accEmail, style: const TextStyle(color: Colors.cyanAccent, fontSize: 13)),
-                  subtitle: const Text('Google Verified Account', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool('is_logged_in', true);
-                    await prefs.setString('analyst_email', accEmail);
-                    await prefs.setString('analyst_name', 'Google Verified Analyst');
-                    _navigateToDashboard('Google Verified Analyst', accEmail);
-                  },
-                ),
-              )).toList(),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _navigateToDashboard(String name, String email) async {
     final prefs = await SharedPreferences.getInstance();
     String image = prefs.getString('analyst_image') ?? '';
@@ -319,21 +259,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     isSignUpMode ? 'Register Encrypted Account' : 'Secure Login',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.cyanAccent),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.cyanAccent),
-                  label: const Text('Continue with Google', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                  onPressed: _showGoogleAccountPicker,
                 ),
               ),
               const SizedBox(height: 20),
