@@ -32,6 +32,10 @@ jobs:
     - name: Fix Android Project Structure
       run: flutter create . --platforms=android --project-name=yqsecurity
 
+    - name: Generate App Icons
+      run: |
+        flutter pub run flutter_launcher_icons:main
+
     - name: Build APK
       run: flutter build apk --release
 
