@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ];
     }
     List<dynamic> decoded = jsonDecode(usersJson);
-    return decoded.map((item => Map<String, String>.from(item))).toList();
+    return decoded.map((item) => Map<String, String>.from(item as Map)).toList();
   }
 
   Future<void> _handleAuthAction() async {
@@ -282,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
-                  labelText: 'Master Password', // تم حذف كلمة Encrypted من الواجهة هنا
+                  labelText: 'Master Password',
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.blueAccent),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
@@ -440,7 +440,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       String? usersJson = prefs.getString('registered_users');
                       if (usersJson != null) {
                         List<dynamic> decoded = jsonDecode(usersJson);
-                        List<Map<String, String>> users = decoded.map((item => Map<String, String>.from(item))).toList();
+                        List<Map<String, String>> users = decoded.map((item) => Map<String, String>.from(item as Map)).toList();
                         for (var u in users) {
                           if (u['email'] == currentEmail) {
                             u['password'] = newHash;
@@ -545,7 +545,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Text(isArabic ? 'المحلل النشط: $currentName' : 'Active Analyst: $currentName', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
             const SizedBox(height: 10),
-            Text(isArabic ? 'أدوات الاستجابة السيبرانية' : 'SOC Toolkits', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.cyanAccent)), // تم حذف كلمة مشفرة من الواجهة هنا أيضاً
+            Text(isArabic ? 'أدوات الاستجابة السيبرانية' : 'SOC Toolkits', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.cyanAccent)),
             const SizedBox(height: 6),
             Text(isArabic ? 'اختر أداة التحليل المتقدمة أدناه:' : 'Select an advanced security engine below:', style: const TextStyle(fontSize: 13, color: Colors.grey)),
             const SizedBox(height: 20),
