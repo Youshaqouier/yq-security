@@ -20,10 +20,10 @@ dev_dependencies:
 
 flutter_launcher_icons:
   android: "launcher_icon"
-  image_path: "assets/icon/yq_icon.png"
+  image_path: "yq_icon.png"
   min_sdk_android: 21
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/icon/yq_icon.png
+    - yq_icon.png
