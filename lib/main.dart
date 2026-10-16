@@ -82,81 +82,125 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // جلب قائمة الحسابات المخزنة محلياً لتعدد المستخدمين
+  Future<List<Map<String, String>>> _getStoredUsers() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? usersJson = prefs.getString('registered_users');
+    if (usersJson == null) {
+      // الحساب الافتراضي التجريبي
+      return [
+        {
+          'email': 'analyst@yqsecurity.com',
+          'password': hashSecurePassword('admin123'),
+          'name': 'SOC Analyst'
+        }
+      ];
+    }
+    List<dynamic> decoded = jsonDecode(usersJson);
+    return decoded.map((item => Map<String, String>.from(item))).toList();
+  }
+
   Future<void> _handleAuthAction() async {
     final prefs = await SharedPreferences.getInstance();
     String email = emailController.text.trim();
     String pass = passwordController.text;
+    String name = nameController.text.isNotEmpty ? nameController.text : 'SOC Analyst';
 
     if (email.isEmpty || pass.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter valid email and password')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter valid email and password'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
       return;
     }
 
+    List<Map<String, String>> users = await _getStoredUsers();
+    String hashedInputPass = hashSecurePassword(pass);
+
     if (isSignUpMode) {
-      String hashedPassword = hashSecurePassword(pass);
-      await prefs.setString('reg_email', email);
-      await prefs.setString('reg_pass', hashedPassword);
-      await prefs.setString('analyst_name', nameController.text.isNotEmpty ? nameController.text : 'SOC Analyst');
+      // التحقق مما إذا كان البريد موجوداً مسبقاً
+      bool exists = users.any((u) => u['email'] == email);
+      if (exists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email already exists! Please login.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      // إضافة الحساب الجديد للقائمة دون مسح الحسابات السابقة
+      users.add({
+        'email': email,
+        'password': hashedInputPass,
+        'name': name,
+      });
+
+      await prefs.setString('registered_users', jsonEncode(users));
       await prefs.setString('analyst_email', email);
+      await prefs.setString('analyst_name', name);
       await prefs.setBool('is_logged_in', true);
 
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => DashboardScreen(
               analystEmail: email,
-              analystName: nameController.text.isNotEmpty ? nameController.text : 'SOC Analyst',
+              analystName: name,
               initialImage: '',
             ),
           ),
         );
       }
     } else {
-      String? savedEmail = prefs.getString('reg_email');
-      String? savedPass = prefs.getString('reg_pass');
-      String hashedInputPass = hashSecurePassword(pass);
-
-      if (savedEmail == null || savedPass == null) {
-        if (email == 'analyst@yqsecurity.com' && hashedInputPass == hashSecurePassword('admin123')) {
-          await prefs.setBool('is_logged_in', true);
-          _navigateToDashboard('SOC Analyst', email);
-          return;
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No account found. Please Sign Up first.')),
-        );
-        return;
-      }
-
-      if (email == savedEmail && hashedInputPass == savedPass) {
-        await prefs.setBool('is_logged_in', true);
-        String name = prefs.getString('analyst_name') ?? 'SOC Analyst';
-        _navigateToDashboard(name, email);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid Email or Password! Access Denied.')),
-        );
-      }
-    }
-  }
-
-  void _navigateToDashboard(String name, String email) async {
-    final prefs = await SharedPreferences.getInstance();
-    String image = prefs.getString('analyst_image') ?? '';
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DashboardScreen(
-            analystEmail: email,
-            analystName: name,
-            initialImage: image,
-          ),
-        ),
+      // وضع تسجيل الدخول - التحقق من مطابقة الحساب ضمن القائمة أو الحساب الافتراضي
+      var matchedUser = users.firstWhere(
+        (u) => u['email'] == email && u['password'] == hashedInputPass,
+        orElse: () => {},
       );
+
+      if (matchedUser.isNotEmpty) {
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setString('analyst_email', email);
+        await prefs.setString('analyst_name', matchedUser['name'] ?? 'SOC Analyst');
+        
+        String image = prefs.getString('analyst_image') ?? '';
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DashboardScreen(
+                analystEmail: email,
+                analystName: matchedUser['name'] ?? 'SOC Analyst',
+                initialImage: image,
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid Email or Password! Access Denied.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -238,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
-                  labelText: 'Master Password (Encrypted)',
+                  labelText: 'Master Password', // تم حذف كلمة Encrypted من الواجهة هنا
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.blueAccent),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
@@ -256,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
                   onPressed: _handleAuthAction,
                   child: Text(
-                    isSignUpMode ? 'Register Encrypted Account' : 'Secure Login',
+                    isSignUpMode ? 'Register Account' : 'Secure Login',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -319,7 +363,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await prefs.setString('analyst_image', profileImagePath);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isArabic ? 'تم تحديث الصورة الشخصية بنجاح!' : 'Profile image updated successfully!')),
+          SnackBar(
+            content: Text(isArabic ? 'تم تحديث الصورة الشخصية بنجاح!' : 'Profile image updated successfully!'),
+            duration: const Duration(seconds: 2),
+          ),
         );
       }
     }
@@ -386,14 +433,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.setString('analyst_name', currentName);
                     await prefs.setString('analyst_email', currentEmail);
+                    
+                    // تحديث كلمة المرور في القائمة المخزنة أيضاً
                     if (passEditController.text.isNotEmpty) {
-                      await prefs.setString('reg_pass', hashSecurePassword(passEditController.text));
+                      String newHash = hashSecurePassword(passEditController.text);
+                      String? usersJson = prefs.getString('registered_users');
+                      if (usersJson != null) {
+                        List<dynamic> decoded = jsonDecode(usersJson);
+                        List<Map<String, String>> users = decoded.map((item => Map<String, String>.from(item))).toList();
+                        for (var u in users) {
+                          if (u['email'] == currentEmail) {
+                            u['password'] = newHash;
+                          }
+                        }
+                        await prefs.setString('registered_users', jsonEncode(users));
+                      }
                     }
                     
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(isArabic ? 'تم تحديث الملف الشخصي بنجاح!' : 'Profile updated successfully!')),
-                    );
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(isArabic ? 'تم تحديث الملف الشخصي بنجاح!' : 'Profile updated successfully!'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
                   child: Text(isArabic ? 'حفظ التعديلات' : 'Save Profile Settings'),
                 ),
@@ -480,7 +545,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Text(isArabic ? 'المحلل النشط: $currentName' : 'Active Analyst: $currentName', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
             const SizedBox(height: 10),
-            Text(isArabic ? 'أدوات الاستجابة السيبرانية المشفرة' : 'Encrypted SOC Toolkits', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.cyanAccent)),
+            Text(isArabic ? 'أدوات الاستجابة السيبرانية' : 'SOC Toolkits', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.cyanAccent)), // تم حذف كلمة مشفرة من الواجهة هنا أيضاً
             const SizedBox(height: 6),
             Text(isArabic ? 'اختر أداة التحليل المتقدمة أدناه:' : 'Select an advanced security engine below:', style: const TextStyle(fontSize: 13, color: Colors.grey)),
             const SizedBox(height: 20),
@@ -535,7 +600,7 @@ class UserGuideScreen extends StatelessWidget {
         children: [
           _buildGuideSection(
             isArabic ? '1. إدارة الحساب والأمان' : '1. Account & Security',
-            isArabic ? 'تسجيل حساب حقيقي وتأمين كلمة المرور بـ SHA-256، والنقر على دائرة البروفايل لاختيار صورة من ذاكرة الهاتف.' : 'Register secure accounts, secure passwords via SHA-256, and tap the profile avatar to pick images from storage.',
+            isArabic ? 'تسجيل عدة حسابات وتأمين كلمات المرور بـ SHA-256، والنقر على دائرة البروفايل لاختيار صورة من ذاكرة الهاتف.' : 'Register multiple accounts, secure passwords via SHA-256, and tap the profile avatar to pick images from storage.',
           ),
           const SizedBox(height: 12),
           _buildGuideSection(
@@ -702,7 +767,12 @@ class _SuricataScreenState extends State<SuricataScreen> {
                     icon: const Icon(Icons.copy, color: Colors.orangeAccent),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: generatedRule));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم النسخ!' : 'Copied!')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(ar ? 'تم النسخ!' : 'Copied!'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -860,7 +930,12 @@ class _WiresharkSearchScreenState extends State<WiresharkSearchScreen> {
                         icon: const Icon(Icons.copy, size: 18, color: Colors.cyanAccent),
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: item));
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم نسخ الفلتر!' : 'Filter Copied!')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(ar ? 'تم نسخ الفلتر!' : 'Filter Copied!'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
                         },
                       ),
                       onTap: () {
@@ -951,7 +1026,12 @@ class _SplunkScreenState extends State<SplunkScreen> {
                     icon: const Icon(Icons.copy, color: Colors.purpleAccent),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: generatedSpl));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم النسخ!' : 'Copied!')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(ar ? 'تم النسخ!' : 'Copied!'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -1114,7 +1194,12 @@ class _CheatSheetScreenState extends State<CheatSheetScreen> {
                                         icon: const Icon(Icons.copy, size: 18, color: Colors.greenAccent), 
                                         onPressed: () {
                                           Clipboard.setData(ClipboardData(text: att['code']!));
-                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ar ? 'تم النسخ!' : 'Copied!')));
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(ar ? 'تم النسخ!' : 'Copied!'),
+                                              duration: const Duration(seconds: 2),
+                                            ),
+                                          );
                                         },
                                       ),
                                     ],
